@@ -128,3 +128,63 @@
     @apply font-sans;
   }
 }
+
+/* ─── Premium overrides for the mall sales deck ─── */
+
+html {
+  scroll-behavior: auto; /* Lenis owns smooth scroll */
+}
+
+body {
+  background: #020612;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: rgba(212, 175, 122, 0.18);
+  color: #fff;
+}
+
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+}
+
+/* PLATFORM — golden */
+.gradient-platform {
+  color: #C9A96E;
+}
+
+/* ── Mobile hero fixes (desktop untouched) ── */
+@media (max-width: 768px) {
+  .hero-headline {
+    font-size: clamp(2rem, 10.5vw, 2.8rem) !important;
+    line-height: 1.0 !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  .hero-cta-wrapper {
+    display: flex !important;
+    flex-direction: column !important;
+    border-radius: 16px !important;
+    width: 100% !important;
+  }
+
+  .hero-cta-wrapper button {
+    border-radius: 12px !important;
+    justify-content: center !important;
+    width: 100% !important;
+  }
+
+  .hero-stats {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .hero-stats > div {
+    flex: 1 1 45% !important;
+    min-width: 0 !important;
+  }
+}
