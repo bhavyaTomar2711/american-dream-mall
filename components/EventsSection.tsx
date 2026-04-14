@@ -381,6 +381,7 @@ export default function EventsSection() {
 
           {/* ── Bottom overlay bar ── */}
           <div
+            className="events-bottom"
             style={{
               position: "absolute",
               bottom: 0,
@@ -396,6 +397,7 @@ export default function EventsSection() {
           >
             {/* Venue stats — glass cards */}
             <div
+              className="venue-stats"
               style={{
                 display: "flex",
                 gap: "10px",

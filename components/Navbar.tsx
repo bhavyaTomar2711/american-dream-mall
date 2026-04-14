@@ -2,7 +2,20 @@
 
 import { motion } from "framer-motion";
 
-const NAV_LINKS = ["Explore", "Experience", "Events", "Leasing"];
+const NAV_LINKS = [
+  { label: "Retail", href: "#explore" },
+  { label: "Luxury", href: "#luxury" },
+  { label: "Experience", href: "#experience" },
+  { label: "Dining", href: "#dining" },
+  { label: "Events", href: "#events" },
+];
+
+function scrollTo(href: string) {
+  const el = document.querySelector(href);
+  if (el) {
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
 
 export default function Navbar() {
   return (
@@ -23,7 +36,8 @@ export default function Navbar() {
         }}
       >
         {/* Logo */}
-        <span
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           style={{
             fontFamily: "var(--font-montserrat)",
             fontSize: "11px",
@@ -31,17 +45,20 @@ export default function Navbar() {
             letterSpacing: "0.26em",
             textTransform: "uppercase",
             color: "rgba(255,255,255,0.70)",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
           }}
         >
           American Dream
-        </span>
+        </button>
 
         {/* Links */}
         <div className="hidden md:flex items-center gap-8">
           {NAV_LINKS.map((link) => (
-            <a
-              key={link}
-              href={`#${link.toLowerCase()}`}
+            <button
+              key={link.label}
+              onClick={() => scrollTo(link.href)}
               style={{
                 fontFamily: "var(--font-montserrat)",
                 fontSize: "10.5px",
@@ -49,12 +66,16 @@ export default function Navbar() {
                 textTransform: "uppercase",
                 color: "rgba(255,255,255,0.80)",
                 transition: "color 0.3s",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 0,
               }}
               onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,1)")}
               onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.80)")}
             >
-              {link}
-            </a>
+              {link.label}
+            </button>
           ))}
         </div>
 
@@ -62,6 +83,7 @@ export default function Navbar() {
         <motion.button
           whileHover={{ scale: 1.03, filter: "brightness(1.15)" }}
           whileTap={{ scale: 0.97 }}
+          onClick={() => scrollTo("#events")}
           style={{
             fontFamily: "var(--font-montserrat)",
             fontSize: "10.5px",

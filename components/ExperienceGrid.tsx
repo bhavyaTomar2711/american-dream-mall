@@ -45,11 +45,16 @@ function ImageCard({
       transition={{ duration: 0.9, ease: EASE, delay }}
       style={{
         position: "relative",
-        aspectRatio: card.aspect,
-        borderRadius: "26px",
-        /* overflow visible so the label can hang below the image */
+        paddingBottom: "28px",
       }}
     >
+      <div
+        style={{
+          position: "relative",
+          aspectRatio: card.aspect,
+          borderRadius: "26px",
+        }}
+      >
       {/* Image wrapper — clips + scales on hover, shadow stays fixed */}
       <motion.div
         whileHover={{ scale: 1.025 }}
@@ -81,11 +86,13 @@ function ImageCard({
         />
       </motion.div>
 
+      </div>
+
       {/* Floating white label — overlaps the image slightly */}
       <div
         style={{
           position: "absolute",
-          bottom: "-14px",
+          bottom: "0px",
           ...(card.labelSide === "left"
             ? { left: "22px" }
             : { right: "22px" }),
@@ -184,12 +191,13 @@ export default function ExperienceGrid() {
       <div style={{ maxWidth: "1480px", margin: "0 auto" }}>
         {/* ── Header ── */}
         <div
+          className="exp-header"
           style={{
             display: "flex",
             alignItems: "flex-end",
             justifyContent: "space-between",
             gap: "clamp(32px, 5vw, 80px)",
-            marginBottom: "clamp(56px, 7vh, 96px)",
+            marginBottom: "clamp(40px, 5vh, 72px)",
             flexWrap: "wrap",
           }}
         >
@@ -253,6 +261,7 @@ export default function ExperienceGrid() {
 
         {/* ── Asymmetric magazine grid ── */}
         <div
+          className="exp-grid"
           style={{
             display: "flex",
             gap: "clamp(24px, 2.4vw, 40px)",
@@ -290,6 +299,7 @@ export default function ExperienceGrid() {
 
         {/* ── Bottom row: wheel + waterpark side by side ── */}
         <div
+          className="exp-grid-bottom"
           style={{
             display: "flex",
             gap: "clamp(28px, 3vw, 44px)",

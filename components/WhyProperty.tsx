@@ -398,17 +398,19 @@ export default function WhyProperty() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
             transition={{ duration: 0.5, ease: EASE }}
+            className="why-slide-content"
             style={{
               position: "relative",
               zIndex: 2,
               display: "flex",
               alignItems: "flex-start",
-              gap: "clamp(40px, 6vw, 96px)",
+              gap: "clamp(24px, 4vw, 96px)",
               minHeight: "clamp(280px, 34vh, 380px)",
+              flexWrap: "wrap",
             }}
           >
             {/* LEFT — Text */}
-            <div style={{ flex: "1 1 55%", minWidth: 0 }}>
+            <div style={{ flex: "1 1 300px", minWidth: 0 }}>
               {/* Tag pill — glass on dark */}
               <motion.div
                 initial={{ opacity: 0, x: -12 }}
@@ -514,11 +516,12 @@ export default function WhyProperty() {
             {/* RIGHT — Glass stat cards */}
             <div
               style={{
-                flex: "0 1 380px",
+                flex: "1 1 280px",
                 display: "flex",
-                flexDirection: "column",
-                gap: "clamp(10px, 1.4vh, 14px)",
-                paddingTop: "12px",
+                flexDirection: "row",
+                flexWrap: "wrap",
+                gap: "clamp(8px, 1.2vw, 14px)",
+                paddingTop: "0px",
               }}
             >
               {slide.stats.map((stat, i) => (

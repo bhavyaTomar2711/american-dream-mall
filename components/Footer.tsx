@@ -263,6 +263,7 @@ export default function Footer() {
           LINKS GRID
       ═══════════════════════════════════════════ */}
       <div
+        className="footer-links"
         style={{
           maxWidth: "1480px",
           margin: "0 auto",
@@ -348,6 +349,7 @@ export default function Footer() {
           BOTTOM BAR
       ═══════════════════════════════════════════ */}
       <div
+        className="footer-bottom"
         style={{
           maxWidth: "1480px",
           margin: "0 auto",
