@@ -158,14 +158,17 @@ function ProgressBar({
   active,
   passed,
   onClick,
+  label,
 }: {
   active: boolean;
   passed: boolean;
   onClick: () => void;
+  label: string;
 }) {
   return (
     <button
       onClick={onClick}
+      aria-label={label}
       style={{
         flex: 1,
         height: "2px",
@@ -243,6 +246,7 @@ export default function WhyProperty() {
   return (
     <section
       id="why"
+      data-nav-theme="light"
       style={{
         width: "100%",
         background: "#F5F5F7",
@@ -362,12 +366,13 @@ export default function WhyProperty() {
           </motion.p>
 
           <div style={{ display: "flex", gap: "5px", flex: "0 1 260px" }}>
-            {SLIDES.map((_, i) => (
+            {SLIDES.map((s, i) => (
               <ProgressBar
                 key={i}
                 active={i === current}
                 passed={i < current}
                 onClick={() => goTo(i)}
+                label={`Go to slide ${i + 1}: ${s.tag}`}
               />
             ))}
           </div>
@@ -556,6 +561,7 @@ export default function WhyProperty() {
             onClick={() =>
               goTo((current - 1 + SLIDES.length) % SLIDES.length)
             }
+            aria-label="Previous slide"
             style={{
               width: "44px",
               height: "44px",
@@ -588,6 +594,7 @@ export default function WhyProperty() {
             }}
             whileTap={{ scale: 0.94 }}
             onClick={() => goTo((current + 1) % SLIDES.length)}
+            aria-label="Next slide"
             style={{
               width: "44px",
               height: "44px",

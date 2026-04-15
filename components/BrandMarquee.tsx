@@ -1,25 +1,48 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { LEASING } from "@/lib/leasing";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-const ROW_1 = [
-  { src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776155642/Armani_Exchange_595_dorkyy.webp", alt: "Armani Exchange" },
-  { src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776155642/Uniqlo_Lifewear_595_xsmn3n.webp", alt: "Uniqlo" },
-  { src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776155642/venue-detail-bath-and-body-works_b1d1ay.webp", alt: "Bath & Body Works" },
-  { src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776155641/H_M_rbuajp.jpg", alt: "H&M" },
-  { src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776155642/Boss_-_595_x_433_px_jnm3yu.webp", alt: "Hugo Boss" },
-];
+/* ─────────────────────────────────────────────
+   Pull logos from the /leasing data so there is
+   one source of truth. New tenants added there
+   automatically land here as well.
+───────────────────────────────────────────── */
 
-const ROW_2 = [
-  { src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776155641/venue-detail-pink_rifgiu.webp", alt: "PINK" },
-  { src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776155641/venue-detail-aerie_jjn4xn.webp", alt: "Aerie" },
-  { src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776155641/venue-detail-pandora_vbwuki.webp", alt: "Pandora" },
-  { src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776155641/American_Eagle_Outfitters_vector_logo_svg_ai_free_download_-_Brandlogos_net_tff3rv.jpg", alt: "American Eagle" },
-  { src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776155641/venue-detail-victorias-secret_jlhzhs.webp", alt: "Victoria's Secret" },
-];
+type Brand = { src: string; alt: string };
 
+function toBrand(t: { name: string; logo?: string }): Brand | null {
+  return t.logo ? { src: t.logo, alt: t.name } : null;
+}
+
+function isBrand(b: Brand | null): b is Brand {
+  return b !== null;
+}
+
+function interleave<T>(a: T[], b: T[]): T[] {
+  const out: T[] = [];
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    if (a[i]) out.push(a[i]);
+    if (b[i]) out.push(b[i]);
+  }
+  return out;
+}
+
+// Row 1 — Luxury × Dining (ivory wordmarks and colored marks)
+const ROW_1 = interleave(
+  LEASING.luxury.tenants.map(toBrand).filter(isBrand),
+  LEASING.dining.tenants.map(toBrand).filter(isBrand),
+);
+
+// Row 2 — Retail × Pop-up (color-forward brands)
+const ROW_2 = interleave(
+  LEASING.retail.tenants.map(toBrand).filter(isBrand),
+  LEASING.popup.tenants.map(toBrand).filter(isBrand),
+);
+
+// Triple the content so the marquee loops without seam
 const TICKER_1 = [...ROW_1, ...ROW_1, ...ROW_1];
 const TICKER_2 = [...ROW_2, ...ROW_2, ...ROW_2];
 
@@ -30,20 +53,20 @@ const STATS = [
   { value: "#1", label: "Retail Destination" },
 ];
 
-function LogoCard({ src, alt }: { src: string; alt: string }) {
+function LogoCard({ src, alt }: Brand) {
   return (
     <motion.div
       whileHover={{
         y: -6,
         boxShadow:
-          "0 20px 48px -12px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06)",
+          "0 20px 48px -12px rgba(0,0,0,0.14), 0 4px 12px rgba(0,0,0,0.06)",
       }}
       transition={{ duration: 0.4, ease: EASE }}
       style={{
         flexShrink: 0,
-        width: "clamp(130px, 14vw, 170px)",
-        height: "clamp(130px, 14vw, 170px)",
-        borderRadius: "24px",
+        width: "clamp(150px, 15vw, 190px)",
+        height: "clamp(110px, 11vw, 140px)",
+        borderRadius: "20px",
         background: "#FFFFFF",
         border: "1px solid rgba(0,0,0,0.05)",
         boxShadow:
@@ -53,20 +76,26 @@ function LogoCard({ src, alt }: { src: string; alt: string }) {
         justifyContent: "center",
         cursor: "default",
         transition: "box-shadow 0.4s ease",
+        padding: "clamp(12px, 1.2vw, 18px)",
       }}
     >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
         alt={alt}
         loading="lazy"
+        decoding="async"
         draggable={false}
         style={{
-          width: "62%",
-          height: "62%",
+          maxWidth: "82%",
+          maxHeight: "76%",
+          width: "auto",
+          height: "auto",
           objectFit: "contain",
           userSelect: "none",
           WebkitUserSelect: "none",
-          transition: "transform 0.4s ease",
+          opacity: 0.92,
+          transition: "opacity 0.4s ease",
         }}
       />
     </motion.div>
@@ -76,6 +105,7 @@ function LogoCard({ src, alt }: { src: string; alt: string }) {
 export default function BrandMarquee() {
   return (
     <section
+      data-nav-theme="light"
       style={{
         background: "#F5F5F7",
         padding: "clamp(72px, 10vh, 120px) 0 clamp(56px, 7vh, 88px)",
@@ -181,7 +211,7 @@ export default function BrandMarquee() {
             flexWrap: "wrap",
           }}
         >
-          {STATS.map((s, i) => (
+          {STATS.map((s) => (
             <div
               key={s.label}
               style={{
@@ -249,7 +279,7 @@ export default function BrandMarquee() {
 
         <motion.div
           animate={{ x: ["0%", "-33.333%"] }}
-          transition={{ x: { duration: 35, repeat: Infinity, ease: "linear" } }}
+          transition={{ x: { duration: 60, repeat: Infinity, ease: "linear" } }}
           style={{
             display: "flex",
             alignItems: "center",
@@ -293,7 +323,7 @@ export default function BrandMarquee() {
 
         <motion.div
           animate={{ x: ["-33.333%", "0%"] }}
-          transition={{ x: { duration: 30, repeat: Infinity, ease: "linear" } }}
+          transition={{ x: { duration: 55, repeat: Infinity, ease: "linear" } }}
           style={{
             display: "flex",
             alignItems: "center",

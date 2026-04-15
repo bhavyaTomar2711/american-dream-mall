@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const IMAGE =
-  "https://res.cloudinary.com/dwo1snivu/image/upload/v1776103089/hey_i_want_202604132151-Photoroom_iyqmhr.png";
+  "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776103089/hey_i_want_202604132151-Photoroom_iyqmhr.png";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const SLIDE_INTERVAL = 4000;
@@ -72,9 +72,10 @@ function Metric({ value, label }: { value: string; label: string }) {
         style={{
           fontFamily: "var(--font-montserrat)",
           fontSize: "8.5px",
+          fontWeight: 500,
           letterSpacing: "0.26em",
           textTransform: "uppercase",
-          color: "rgba(0,0,0,0.32)",
+          color: "rgba(0,0,0,0.62)",
           lineHeight: 1,
         }}
       >
@@ -104,6 +105,7 @@ export default function StorySlides() {
   return (
     <section
       id="explore"
+      data-nav-theme="light"
       style={{
         width: "100%",
         background: "#F5F5F7",
@@ -339,6 +341,7 @@ export default function StorySlides() {
                   if (timerRef.current) clearInterval(timerRef.current);
                   timerRef.current = setInterval(next, SLIDE_INTERVAL);
                 }}
+                aria-label={`Go to slide ${i + 1}: ${SLIDES[i].headline} ${SLIDES[i].headline2}`}
                 style={{
                   width: i === current ? "28px" : "8px",
                   height: "3px",

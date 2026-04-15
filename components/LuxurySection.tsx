@@ -8,27 +8,27 @@ const SLIDE_INTERVAL = 3000;
 
 const SLIDES = [
   {
-    src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776186621/pexels-valent-lau-1438552412-32102403_ncxgzs.jpg",
+    src: "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776186621/pexels-valent-lau-1438552412-32102403_ncxgzs.jpg",
     caption: "Curated Collections",
   },
   {
-    src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776186621/dsign_a_ultra_202604142235_pkisyf.jpg",
+    src: "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776186621/dsign_a_ultra_202604142235_pkisyf.jpg",
     caption: "The Atelier Experience",
   },
   {
-    src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776186621/pexels-th-nh-nguy-n-719702942-19456977_rsslga.jpg",
+    src: "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776186621/pexels-th-nh-nguy-n-719702942-19456977_rsslga.jpg",
     caption: "World-Class Flagships",
   },
   {
-    src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776186621/make_it_from_202604142239_k6k1bg.jpg",
+    src: "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776186621/make_it_from_202604142239_k6k1bg.jpg",
     caption: "Private Shopping Suites",
   },
   {
-    src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776186777/make_this_imaeg_202604112355_tb0m53.jpg",
+    src: "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776186777/make_this_imaeg_202604112355_tb0m53.jpg",
     caption: "Elevated Interiors",
   },
   {
-    src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776186621/pexels-ansar-muhammad-380085065-27626759_xddsbd.jpg",
+    src: "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776186621/pexels-ansar-muhammad-380085065-27626759_xddsbd.jpg",
     caption: "A Destination Within",
   },
 ];
@@ -64,6 +64,7 @@ export default function LuxurySection() {
   return (
     <section
       id="luxury"
+      data-nav-theme="light"
       style={{
         width: "100%",
         background: "#F5F5F7",
@@ -357,6 +358,7 @@ export default function LuxurySection() {
                   <button
                     key={i}
                     onClick={() => goTo(i)}
+                    aria-label={`Go to slide ${i + 1}: ${SLIDES[i].caption}`}
                     style={{
                       flex: 1,
                       height: "2px",
@@ -410,6 +412,7 @@ export default function LuxurySection() {
                   onClick={() =>
                     goTo((current - 1 + SLIDES.length) % SLIDES.length)
                   }
+                  aria-label="Previous slide"
                   style={{
                     width: "36px",
                     height: "36px",
@@ -439,6 +442,7 @@ export default function LuxurySection() {
                   whileHover={{ background: "rgba(255,255,255,0.12)" }}
                   whileTap={{ scale: 0.94 }}
                   onClick={() => goTo((current + 1) % SLIDES.length)}
+                  aria-label="Next slide"
                   style={{
                     width: "36px",
                     height: "36px",

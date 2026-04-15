@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -12,25 +13,31 @@ const SLIDE_INTERVAL = 4000;
 
 const EVENTS = [
   {
-    src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776191272/pexels-jibarofoto-18482996_ivrrqm.jpg",
+    src: "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776191272/pexels-jibarofoto-18482996_ivrrqm.jpg",
     type: "Concerts & Live",
     title: "18,000 seats. One unforgettable night.",
     sub: "World-class acoustics, state-of-the-art production, and a built-in audience of millions. From arena tours to intimate sets — this is where artists want to perform.",
   },
   {
-    src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776191274/make_an_image_202604142355_l7diea.jpg",
+    src: "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776191274/make_an_image_202604142355_l7diea.jpg",
     type: "Celebrity Appearances",
     title: "Where culture shows up.",
     sub: "A-list meet-and-greets, influencer activations, and red-carpet moments that generate millions of impressions — all inside one destination.",
   },
   {
-    src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776191273/pexels-prime-cinematics-1005175-2057274_qdqc1d.jpg",
+    src: "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776191273/pexels-prime-cinematics-1005175-2057274_qdqc1d.jpg",
     type: "Performing Arts",
     title: "A stage for the extraordinary.",
     sub: "Broadway-caliber productions, immersive theatre, and cultural programming that transforms retail into a world-class arts destination.",
   },
   {
-    src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776191274/make_it_again_202604142348_ruouug.jpg",
+    src: "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776266297/make_an_image_202604152047_nq20en.jpg",
+    type: "Expo & Conventions",
+    title: "The floor where deals get done.",
+    sub: "Trade shows, corporate summits, product reveals, and keynotes — staged in flexible convention space with turnkey production and a built-in audience of forty million.",
+  },
+  {
+    src: "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776191274/make_it_again_202604142348_ruouug.jpg",
     type: "Brand Launches",
     title: "Launch here. Launch everywhere.",
     sub: "Product drops, experiential pop-ups, and immersive brand activations — with 40 million visitors as your built-in audience.",
@@ -49,6 +56,7 @@ const VENUE_STATS = [
 ───────────────────────────────────────────── */
 
 export default function EventsSection() {
+  const router = useRouter();
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -79,6 +87,7 @@ export default function EventsSection() {
   return (
     <section
       id="events"
+      data-nav-theme="light"
       style={{
         width: "100%",
         background: "#F5F5F7",
@@ -471,6 +480,7 @@ export default function EventsSection() {
                   <button
                     key={i}
                     onClick={() => goTo(i)}
+                    aria-label={`Go to slide ${i + 1}: ${EVENTS[i].type}`}
                     style={{
                       flex: 1,
                       height: "2px",
@@ -524,6 +534,7 @@ export default function EventsSection() {
                   onClick={() =>
                     goTo((current - 1 + EVENTS.length) % EVENTS.length)
                   }
+                  aria-label="Previous event"
                   style={{
                     width: "36px",
                     height: "36px",
@@ -553,6 +564,7 @@ export default function EventsSection() {
                   whileHover={{ background: "rgba(255,255,255,0.12)" }}
                   whileTap={{ scale: 0.94 }}
                   onClick={() => goTo((current + 1) % EVENTS.length)}
+                  aria-label="Next event"
                   style={{
                     width: "36px",
                     height: "36px",
@@ -580,13 +592,14 @@ export default function EventsSection() {
                 </motion.button>
               </div>
 
-              {/* Book CTA */}
+              {/* Book CTA → /venues hub (browse first, inquire second) */}
               <motion.button
                 whileHover={{
                   background: "rgba(201,169,110,0.25)",
                   borderColor: "rgba(201,169,110,0.40)",
                 }}
                 whileTap={{ scale: 0.97 }}
+                onClick={() => router.push("/venues")}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",

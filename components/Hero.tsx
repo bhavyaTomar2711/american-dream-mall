@@ -1,9 +1,19 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { motion, type Variants } from "framer-motion";
 
+function scrollToId(id: string) {
+  const el = document.querySelector(id);
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 const VIDEO_URL =
-  "https://res.cloudinary.com/dwo1snivu/video/upload/v1775988777/InShot_20260412_152744988_ocz9ev.mp4";
+  "https://res.cloudinary.com/dwo1snivu/video/upload/q_auto,f_auto/v1775988777/InShot_20260412_152744988_ocz9ev.mp4";
+// Lightweight first-frame still (Cloudinary generates from the video) — used as the LCP element
+// so the page doesn't wait on the MP4 to paint. w_1280 + q_auto:good trims mobile bytes hard.
+const VIDEO_POSTER =
+  "https://res.cloudinary.com/dwo1snivu/video/upload/so_0,f_auto,q_auto:good,w_1280/v1775988777/InShot_20260412_152744988_ocz9ev.jpg";
 
 const STATS = [
   { value: "40M+", label: "Annual Visitors" },
@@ -30,10 +40,22 @@ const fade: Variants = {
 };
 
 export default function Hero() {
+  const router = useRouter();
   return (
-    <section className="relative w-full h-screen overflow-hidden">
+    <section data-nav-theme="dark" className="relative w-full h-screen overflow-hidden">
 
-      {/* ── Video ── */}
+      {/* ── LCP: poster paints immediately (high priority, responsive) ── */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={VIDEO_POSTER}
+        alt=""
+        aria-hidden
+        fetchPriority="high"
+        decoding="async"
+        className="absolute inset-0 w-full h-full object-cover"
+      />
+
+      {/* ── Video fades in once decoded, layered on top of the poster ── */}
       <video
         className="absolute inset-0 w-full h-full object-cover"
         src={VIDEO_URL}
@@ -41,7 +63,7 @@ export default function Hero() {
         muted
         loop
         playsInline
-        preload="auto"
+        preload="metadata"
       />
 
       {/* ── Base dark overlay ── */}
@@ -215,6 +237,7 @@ export default function Hero() {
                   whileHover={{ filter: "brightness(1.08)" }}
                   whileTap={{ scale: 0.97 }}
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  onClick={() => scrollToId("#why")}
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
@@ -244,13 +267,15 @@ export default function Hero() {
 
                 {/* Secondary CTA */}
                 <motion.button
-                  whileHover={{ color: "rgba(255,255,255,0.90)" }}
+                  whileHover={{ color: "rgba(255,255,255,0.95)" }}
                   whileTap={{ scale: 0.97 }}
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  onClick={() => router.push("/leasing")}
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
-                    padding: "12px 28px",
+                    gap: "8px",
+                    padding: "12px 24px",
                     borderRadius: "9999px",
                     background: "transparent",
                     border: "none",
@@ -258,11 +283,21 @@ export default function Hero() {
                     fontSize: "11px",
                     letterSpacing: "0.20em",
                     textTransform: "uppercase",
-                    color: "rgba(255,255,255,0.52)",
+                    color: "rgba(255,255,255,0.60)",
                     cursor: "pointer",
                   }}
                 >
-                  Leasing Inquiries
+                  Explore Leasing
+                  <span
+                    aria-hidden
+                    style={{
+                      width: "4px",
+                      height: "4px",
+                      borderRadius: "50%",
+                      background: "#C9A96E",
+                      boxShadow: "0 0 6px rgba(201,169,110,0.70)",
+                    }}
+                  />
                 </motion.button>
               </div>
             </motion.div>

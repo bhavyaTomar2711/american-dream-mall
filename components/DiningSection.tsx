@@ -11,32 +11,32 @@ const RESTAURANTS = [
   {
     name: "Carpaccio",
     tag: "Italian Fine Dining",
-    src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776164039/Tagelli_Pasta__La_Mejor_Receta_F%C3%A1cil_y_R%C3%A1pida_pkgngh.jpg",
+    src: "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776164039/Tagelli_Pasta__La_Mejor_Receta_F%C3%A1cil_y_R%C3%A1pida_pkgngh.jpg",
   },
   {
     name: "Mr. Beast Burger",
     tag: "Smash Burgers & Shakes",
-    src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776164039/download_3_idzhl9.jpg",
+    src: "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776164039/download_3_idzhl9.jpg",
   },
   {
     name: "American Dream Seafood",
     tag: "Fresh Catch Daily",
-    src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776164039/Fresh_Seafood_Dish_royalty_free_stock_images_qlbzeb.jpg",
+    src: "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776164039/Fresh_Seafood_Dish_royalty_free_stock_images_qlbzeb.jpg",
   },
   {
     name: "Little Sheep Hot Pot",
     tag: "Mongolian Hot Pot",
-    src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776164039/Beef_and_Vegetable_Kabobs_with_Lemon_Herb_Marinade_fz0iqd.jpg",
+    src: "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776164039/Beef_and_Vegetable_Kabobs_with_Lemon_Herb_Marinade_fz0iqd.jpg",
   },
   {
     name: "Mozzarella Bar",
     tag: "Artisan Pizza & Pasta",
-    src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776164039/usa_vkbqxv.jpg",
+    src: "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776164039/usa_vkbqxv.jpg",
   },
   {
     name: "Marcus Live",
     tag: "Modern American Grill",
-    src: "https://res.cloudinary.com/dwo1snivu/image/upload/v1776164039/FoodPhotography_FoodieGram_InstaFood_FoodStyling_FoodPics_FoodLover_Foodstagram_Yummy_Delicious_FoodPorn_HomeMadeFood_FoodArt_FoodBlogger_Tasty_FoodGasm_CulinaryPhotography_PlatingGoals_EatGoodFee_eb8kka.jpg",
+    src: "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776164039/FoodPhotography_FoodieGram_InstaFood_FoodStyling_FoodPics_FoodLover_Foodstagram_Yummy_Delicious_FoodPorn_HomeMadeFood_FoodArt_FoodBlogger_Tasty_FoodGasm_CulinaryPhotography_PlatingGoals_EatGoodFee_eb8kka.jpg",
   },
 ];
 
@@ -115,33 +115,6 @@ function FoodCard({ r }: { r: (typeof RESTAURANTS)[number] }) {
           >
             {r.name}
           </h3>
-
-          <div
-            style={{
-              marginTop: "14px",
-              display: "inline-flex",
-              alignItems: "center",
-              padding: "8px 18px",
-              borderRadius: "9999px",
-              background: "rgba(255,255,255,0.15)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              border: "1px solid rgba(255,255,255,0.20)",
-            }}
-          >
-            <span
-              style={{
-                fontFamily: "var(--font-montserrat)",
-                fontSize: "9px",
-                fontWeight: 500,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: "rgba(255,255,255,0.80)",
-              }}
-            >
-              Learn More
-            </span>
-          </div>
         </div>
       </div>
     </motion.div>
@@ -152,6 +125,7 @@ export default function DiningSection() {
   return (
     <section
       id="dining"
+      data-nav-theme="light"
       style={{ background: "#F5F5F7", position: "relative" }}
     >
       {/* ═══════════════════════════════════════════

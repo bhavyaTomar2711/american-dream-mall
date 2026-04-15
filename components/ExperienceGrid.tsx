@@ -4,17 +4,17 @@ import { motion } from "framer-motion";
 
 const IMAGES = {
   large:
-    "https://res.cloudinary.com/dwo1snivu/image/upload/v1776112403/can_i_make_202604140151_qst4fp.jpg",
+    "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776112403/can_i_make_202604140151_qst4fp.jpg",
   medium:
-    "https://res.cloudinary.com/dwo1snivu/image/upload/v1776112403/freepik_make-the-exact-smae-image_2777344525_tstorr.png",
+    "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776112403/freepik_make-the-exact-smae-image_2777344525_tstorr.png",
   portrait1:
-    "https://res.cloudinary.com/dwo1snivu/image/upload/v1776112403/can_u_make_202604140200_p44je8.jpg",
+    "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776112403/can_u_make_202604140200_p44je8.jpg",
   portrait2:
-    "https://res.cloudinary.com/dwo1snivu/image/upload/v1776112403/ultra_realistic_large_202604140202_pyoob9.jpg",
+    "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776112403/ultra_realistic_large_202604140202_pyoob9.jpg",
   wheel:
-    "https://res.cloudinary.com/dwo1snivu/image/upload/v1776189089/mkae_it_more_202604142321_zdskqu.jpg",
+    "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776189089/mkae_it_more_202604142321_zdskqu.jpg",
   waterpark:
-    "https://res.cloudinary.com/dwo1snivu/image/upload/v1776188306/this_is_dreamwork_202604142306_l6ecw3.jpg",
+    "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1776188306/this_is_dreamwork_202604142306_l6ecw3.jpg",
 };
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -182,6 +182,7 @@ export default function ExperienceGrid() {
   return (
     <section
       id="experience"
+      data-nav-theme="light"
       style={{
         background: "#F5F5F7",
         padding:

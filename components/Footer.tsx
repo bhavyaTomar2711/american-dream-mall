@@ -1,43 +1,50 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
+import { useInquiry, } from "@/providers/InquiryProvider";
+import type { InquiryType } from "@/components/InquiryModal";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-const LINKS = {
+type FooterLink = {
+  label: string;
+  href?: string;
+  inquiry?: InquiryType;
+};
+
+const LINKS: Record<string, FooterLink[]> = {
   Explore: [
     { label: "Attractions", href: "#experience" },
     { label: "Dining", href: "#dining" },
     { label: "Luxury Wing", href: "#luxury" },
     { label: "Events", href: "#events" },
-    { label: "Brand Partners", href: "#" },
+    { label: "Brand Partners", inquiry: "sponsorship" },
   ],
   Business: [
-    { label: "Leasing Inquiries", href: "#" },
-    { label: "Sponsorship", href: "#" },
-    { label: "Event Booking", href: "#" },
-    { label: "Media & Press", href: "#" },
-    { label: "Corporate Events", href: "#" },
+    { label: "Leasing Paths", href: "/leasing" },
+    { label: "Leasing Inquiries", inquiry: "leasing" },
+    { label: "Sponsorship", inquiry: "sponsorship" },
+    { label: "Event Booking", inquiry: "booking" },
+    { label: "Media & Press", inquiry: "press" },
   ],
   Property: [
     { label: "Why American Dream", href: "#why" },
     { label: "Location & Access", href: "#why" },
     { label: "Visitor Demographics", href: "#why" },
-    { label: "Venue Specs", href: "#events" },
-    { label: "Virtual Tour", href: "#" },
+    { label: "Venues", href: "/venues" },
+    { label: "Virtual Tour", inquiry: "press" },
   ],
   Connect: [
-    { label: "Instagram", href: "#" },
-    { label: "LinkedIn", href: "#" },
-    { label: "YouTube", href: "#" },
-    { label: "Facebook", href: "#" },
-    { label: "Contact Us", href: "#" },
+    { label: "Contact Us", inquiry: "leasing" },
   ],
 };
 
 export default function Footer() {
+  const { open } = useInquiry();
   return (
     <footer
+      data-nav-theme="light"
       style={{
         width: "100%",
         background: "#F5F5F7",
@@ -183,6 +190,7 @@ export default function Footer() {
           <motion.button
             whileHover={{ filter: "brightness(1.1)", scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
+            onClick={() => open("leasing")}
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -211,33 +219,6 @@ export default function Footer() {
             </motion.span>
           </motion.button>
 
-          <motion.button
-            whileHover={{
-              background: "rgba(255,255,255,0.10)",
-              borderColor: "rgba(255,255,255,0.22)",
-            }}
-            whileTap={{ scale: 0.97 }}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              padding: "16px 36px",
-              borderRadius: "9999px",
-              background: "rgba(255,255,255,0.04)",
-              backdropFilter: "blur(16px)",
-              WebkitBackdropFilter: "blur(16px)",
-              border: "1px solid rgba(255,255,255,0.10)",
-              fontFamily: "var(--font-montserrat)",
-              fontSize: "11px",
-              fontWeight: 500,
-              letterSpacing: "0.18em",
-              textTransform: "uppercase",
-              color: "rgba(255,255,255,0.55)",
-              cursor: "pointer",
-              transition: "all 0.3s ease",
-            }}
-          >
-            Download Deck
-          </motion.button>
         </motion.div>
       </div>
 
@@ -298,30 +279,63 @@ export default function Footer() {
               {category}
             </p>
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-              {links.map((link) => (
-                <li key={link.label} style={{ marginBottom: "14px" }}>
-                  <a
-                    href={link.href}
-                    style={{
-                      fontFamily: "var(--font-montserrat)",
-                      fontSize: "13px",
-                      fontWeight: 400,
-                      color: "rgba(255,255,255,0.40)",
-                      textDecoration: "none",
-                      letterSpacing: "0.01em",
-                      transition: "color 0.3s ease",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.color = "rgba(201,169,110,0.85)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.color = "rgba(255,255,255,0.40)")
-                    }
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
+              {links.map((link) => {
+                const linkStyle: React.CSSProperties = {
+                  fontFamily: "var(--font-montserrat)",
+                  fontSize: "13px",
+                  fontWeight: 400,
+                  color: "rgba(255,255,255,0.40)",
+                  textDecoration: "none",
+                  letterSpacing: "0.01em",
+                  transition: "color 0.3s ease",
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                  textAlign: "left",
+                };
+                const hoverIn = (e: React.MouseEvent<HTMLElement>) =>
+                  (e.currentTarget.style.color = "rgba(201,169,110,0.85)");
+                const hoverOut = (e: React.MouseEvent<HTMLElement>) =>
+                  (e.currentTarget.style.color = "rgba(255,255,255,0.40)");
+
+                const isInternalRoute =
+                  !!link.href && link.href.startsWith("/");
+
+                return (
+                  <li key={link.label} style={{ marginBottom: "14px" }}>
+                    {link.inquiry ? (
+                      <button
+                        type="button"
+                        onClick={() => open(link.inquiry)}
+                        style={linkStyle}
+                        onMouseEnter={hoverIn}
+                        onMouseLeave={hoverOut}
+                      >
+                        {link.label}
+                      </button>
+                    ) : isInternalRoute ? (
+                      <Link
+                        href={link.href!}
+                        style={linkStyle}
+                        onMouseEnter={hoverIn}
+                        onMouseLeave={hoverOut}
+                      >
+                        {link.label}
+                      </Link>
+                    ) : (
+                      <a
+                        href={link.href}
+                        style={linkStyle}
+                        onMouseEnter={hoverIn}
+                        onMouseLeave={hoverOut}
+                      >
+                        {link.label}
+                      </a>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </motion.div>
         ))}
@@ -391,7 +405,7 @@ export default function Footer() {
               fontSize: "9px",
               letterSpacing: "0.20em",
               textTransform: "uppercase",
-              color: "rgba(201,169,110,0.45)",
+              color: "rgba(201,169,110,0.85)",
             }}
           >
             The Platform
@@ -403,7 +417,7 @@ export default function Footer() {
           style={{
             fontFamily: "var(--font-montserrat)",
             fontSize: "10px",
-            color: "rgba(255,255,255,0.18)",
+            color: "rgba(255,255,255,0.55)",
             margin: 0,
             letterSpacing: "0.04em",
           }}
@@ -412,32 +426,6 @@ export default function Footer() {
           reserved. Meadowlands, NJ.
         </p>
 
-        {/* Minimal social links */}
-        <div style={{ display: "flex", gap: "16px" }}>
-          {["IG", "LI", "YT"].map((s) => (
-            <a
-              key={s}
-              href="#"
-              style={{
-                fontFamily: "var(--font-montserrat)",
-                fontSize: "9px",
-                fontWeight: 500,
-                letterSpacing: "0.14em",
-                color: "rgba(255,255,255,0.22)",
-                textDecoration: "none",
-                transition: "color 0.3s ease",
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.color = "rgba(201,169,110,0.70)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.color = "rgba(255,255,255,0.22)")
-              }
-            >
-              {s}
-            </a>
-          ))}
-        </div>
       </div>
       </div>
     </footer>
