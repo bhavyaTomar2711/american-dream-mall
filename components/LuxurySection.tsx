@@ -38,6 +38,14 @@ export default function LuxurySection() {
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Preload every slide on mount so auto-advance never stalls on a cold fetch.
+  useEffect(() => {
+    SLIDES.forEach((s) => {
+      const img = new Image();
+      img.src = s.src;
+    });
+  }, []);
+
   const next = useCallback(() => {
     setCurrent((c) => (c + 1) % SLIDES.length);
   }, []);

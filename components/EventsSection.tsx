@@ -61,6 +61,15 @@ export default function EventsSection() {
   const [paused, setPaused] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Preload every slide image on mount so the auto-advance never blocks
+  // on a cold fetch. Without this, the crossfade pauses on image download.
+  useEffect(() => {
+    EVENTS.forEach((e) => {
+      const img = new Image();
+      img.src = e.src;
+    });
+  }, []);
+
   const next = useCallback(() => {
     setCurrent((c) => (c + 1) % EVENTS.length);
   }, []);
