@@ -3,6 +3,8 @@ import { Geist, Geist_Mono, Cormorant_Garamond, Bodoni_Moda, Playfair_Display, F
 import "./globals.css";
 import SmoothScrollProvider from "@/providers/SmoothScrollProvider";
 import InquiryProvider from "@/providers/InquiryProvider";
+import MenuProvider from "@/providers/MenuProvider";
+import PresentationProvider from "@/providers/PresentationProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -179,7 +181,11 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-[#020612] text-white">
         <SmoothScrollProvider>
-          <InquiryProvider>{children}</InquiryProvider>
+          <InquiryProvider>
+            <PresentationProvider>
+              <MenuProvider>{children}</MenuProvider>
+            </PresentationProvider>
+          </InquiryProvider>
         </SmoothScrollProvider>
       </body>
     </html>
