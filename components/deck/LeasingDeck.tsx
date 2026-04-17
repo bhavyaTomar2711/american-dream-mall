@@ -194,7 +194,7 @@ function Body({ children }: { children: React.ReactNode }) {
         lineHeight: 1.78,
         color: "rgba(255,255,255,0.46)",
         maxWidth: "440px",
-        margin: "0 0 32px",
+        margin: "0 0 22px",
         letterSpacing: "0.01em",
       }}
     >
@@ -475,7 +475,7 @@ function CategorySlide({
   openInquiry: () => void;
 }) {
   const cat = LEASING[slug];
-  const topTenants = cat.tenants.slice(0, 6);
+  const topTenants = cat.tenants.slice(0, 5);
 
   return (
     <div
@@ -496,14 +496,14 @@ function CategorySlide({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "clamp(80px, 12vh, 120px) clamp(40px, 5vw, 80px) clamp(48px, 6vh, 80px)",
+          padding: "clamp(76px, 10vh, 110px) clamp(40px, 5vw, 80px) clamp(70px, 9vh, 110px)",
           gap: "clamp(24px, 3vw, 40px)",
           flexWrap: "wrap",
           zIndex: 3,
         }}
       >
         {/* LEFT: text + tenants */}
-        <div style={{ flex: "0 1 580px", minWidth: 0, maxWidth: "620px" }}>
+        <div style={{ flex: "0 1 660px", minWidth: 0, maxWidth: "700px" }}>
           <Eyebrow text={`${cat.index} — ${cat.eyebrow}`} />
           <Headline>
             {cat.hero.headline}
@@ -524,10 +524,9 @@ function CategorySlide({
             transition={{ duration: 0.6, ease: EASE, delay: 0.35 }}
             style={{
               display: "flex",
-              flexWrap: "wrap",
-              gap: "8px",
-              marginBottom: "24px",
-              maxWidth: "560px",
+              flexWrap: "nowrap",
+              gap: "6px",
+              marginBottom: "18px",
             }}
           >
             {topTenants.map((t, i) => (
@@ -538,10 +537,10 @@ function CategorySlide({
                 transition={{ duration: 0.4, ease: EASE, delay: 0.38 + i * 0.05 }}
                 style={{
                   background: "#FFFFFF",
-                  borderRadius: "10px",
-                  padding: "10px 14px",
-                  width: "clamp(90px, 9vw, 110px)",
-                  height: "clamp(48px, 5vw, 58px)",
+                  borderRadius: "12px",
+                  padding: "12px 16px",
+                  width: "clamp(110px, 11vw, 134px)",
+                  height: "clamp(62px, 6vw, 76px)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
