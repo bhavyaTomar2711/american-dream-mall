@@ -288,9 +288,11 @@ export default function MenuDrawer() {
               display: "flex",
               alignItems: "center",
               padding:
-                "clamp(100px, 14vh, 160px) clamp(36px, 5vw, 72px) clamp(70px, 10vh, 120px)",
+                "clamp(86px, 11vh, 140px) clamp(36px, 5vw, 72px) clamp(48px, 7vh, 96px)",
               gap: "clamp(32px, 5vw, 80px)",
               zIndex: 5,
+              overflowY: "auto",
+              overflowX: "hidden",
             }}
           >
             {/* LEFT: nav links */}
@@ -312,7 +314,7 @@ export default function MenuDrawer() {
                   display: "flex",
                   alignItems: "center",
                   gap: "12px",
-                  marginBottom: "clamp(20px, 3vh, 36px)",
+                  marginBottom: "clamp(12px, 2vh, 28px)",
                 }}
               >
                 <div
@@ -350,7 +352,7 @@ export default function MenuDrawer() {
                       gridTemplateColumns: "44px 1fr",
                       gap: "clamp(14px, 2vw, 28px)",
                       alignItems: "center",
-                      padding: "clamp(12px, 1.5vh, 20px) 0",
+                      padding: "clamp(8px, 1.1vh, 16px) 0",
                       borderTop: "1px solid rgba(255,255,255,0.06)",
                       cursor: "pointer",
                       position: "relative",
@@ -394,7 +396,7 @@ export default function MenuDrawer() {
                         style={{
                           fontFamily: "var(--font-montserrat)",
                           fontWeight: 700,
-                          fontSize: "clamp(2.4rem, 5.5vw, 5.8rem)",
+                          fontSize: "clamp(1.9rem, 4.8vw, 5rem)",
                           lineHeight: 0.95,
                           letterSpacing: "-0.02em",
                           textTransform: "uppercase",
@@ -412,7 +414,7 @@ export default function MenuDrawer() {
                           fontFamily: "var(--font-fraunces)",
                           fontStyle: "italic",
                           fontWeight: 500,
-                          fontSize: "clamp(1.5rem, 3.2vw, 3.4rem)",
+                          fontSize: "clamp(1.2rem, 2.8vw, 2.8rem)",
                           lineHeight: 1,
                           letterSpacing: "-0.01em",
                           color: "#C9A96E",
