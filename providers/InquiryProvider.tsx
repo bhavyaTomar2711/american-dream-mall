@@ -8,7 +8,14 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import InquiryModal, { type InquiryType } from "@/components/InquiryModal";
+import dynamic from "next/dynamic";
+import { type InquiryType } from "@/components/InquiryModal";
+
+// Modal only renders when the user clicks an inquiry CTA — defer the bundle.
+const InquiryModal = dynamic(() => import("@/components/InquiryModal"), {
+  ssr: false,
+  loading: () => null,
+});
 
 type InquiryContextValue = {
   open: (type?: InquiryType) => void;

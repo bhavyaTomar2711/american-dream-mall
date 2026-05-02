@@ -17,7 +17,7 @@ export const DECK_ORDER: DeckId[] = ["home", "leasing", "venues"];
 
 // Hardcoded totals — must match each deck's TOTAL const
 export const DECK_TOTALS: Record<DeckId, number> = {
-  home: 14,     // matches DeckEngine NAV_LABELS.length
+  home: 15,     // matches DeckEngine NAV_LABELS.length (Hub + Pitch)
   leasing: 5,   // matches LeasingDeck NAV_LABELS.length
   venues: 5,    // matches VenuesDeck NAV_LABELS.length
 };

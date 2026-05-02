@@ -5,6 +5,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-mo
 import { useInquiry } from "@/providers/InquiryProvider";
 import { useMenu } from "@/providers/MenuProvider";
 import { usePresentation } from "@/providers/PresentationProvider";
+import { useDeckAudio } from "@/providers/DeckAudioProvider";
 import type { InquiryType } from "@/components/InquiryModal";
 import Link from "next/link";
 import { LEASING } from "@/lib/leasing";
@@ -13,12 +14,48 @@ import { LEASING } from "@/lib/leasing";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+// Cold open — 60s cinematic, replaces the original splash hero video.
+// NOTE: vc_h264 alone returns empty bodies on this account, but q_auto + f_auto
+// works fine. q_auto:good balances visual quality and file size for fast LCP.
 const HERO_VIDEO =
-  "https://res.cloudinary.com/dwo1snivu/video/upload/v1775988777/InShot_20260412_152744988_ocz9ev.mp4";
+  "https://res.cloudinary.com/dwo1snivu/video/upload/q_auto:good,f_auto/v1777472942/InShot_20260428_122728870_qnvemd.mp4";
+// Poster extracted from the same video at frame 0 — lets LCP fire from a
+// small jpeg (~70 KB) rather than waiting for the heavy MP4 to buffer.
 const HERO_POSTER =
-  "https://res.cloudinary.com/dwo1snivu/video/upload/so_0,w_1920/v1775988777/InShot_20260412_152744988_ocz9ev.jpg";
+  "https://res.cloudinary.com/dwo1snivu/video/upload/so_0,f_auto,q_auto:good,w_1920/v1777472942/InShot_20260428_122728870_qnvemd.jpg";
 const AD_LOGO =
   "https://res.cloudinary.com/dwo1snivu/image/upload/v1776278785/American_Dream__Symbol_ldufrd.svg";
+
+// Round 2 — section loop videos (muted, looping ambient backgrounds).
+// Raw URLs only — see HERO_VIDEO note above.
+const LOOP_VIDEOS = {
+  audience:
+    "https://res.cloudinary.com/dwo1snivu/video/upload/v1777472936/2_online-video-cutter.com_h2e6uq.mp4",
+  luxury:
+    "https://res.cloudinary.com/dwo1snivu/video/upload/v1777472935/3_online-video-cutter.com_nuuact.mp4",
+  retail:
+    "https://res.cloudinary.com/dwo1snivu/video/upload/v1777472936/processed_4_tsyni8.mp4",
+  dining:
+    "https://res.cloudinary.com/dwo1snivu/video/upload/v1777472935/processed_5_zcdsci.mp4",
+  entertainment:
+    "https://res.cloudinary.com/dwo1snivu/video/upload/v1777472936/processed_6_1_uqllj4.mp4",
+} as const;
+
+// Round 2 — Imagine Your Brand Here storefront templates + Ask CTA bg
+const STOREFRONTS = {
+  "luxury-gold":
+    "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1777473262/Luxury_Gold_hexdme.jpg",
+  "minimal-white":
+    "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1777473262/Minimal_White_d0dl9e.jpg",
+  "classic-black":
+    "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1777473262/Classic_Black_igr6vn.jpg",
+  "warm-bronze":
+    "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1777473262/Warm_Bronze_aftixq.jpg",
+  "modern-retail":
+    "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1777473261/Modern_Retail_mymgrm.jpg",
+} as const;
+const ASK_BG =
+  "https://res.cloudinary.com/dwo1snivu/image/upload/f_auto,q_auto/v1777473151/The_Ask_Closing_Background_osu4r4.jpg";
 
 const IMG = {
   luxury:
@@ -78,8 +115,7 @@ const COLLAGE_IMGS = [
 
 const NAV_LABELS = [
   "Welcome",
-  "Retail & Revenue",
-  "The Property",
+  "The Hub",
   "The Audience",
   "Luxury Wing",
   "The Experience",
@@ -90,10 +126,31 @@ const NAV_LABELS = [
   "Events",
   "Leasing Paths",
   "Venues",
+  "Your Brand Here",
+  "AI Sales Pitch",
   "Contact",
 ];
 
-const TOTAL = NAV_LABELS.length; // 14 slides (0–13)
+const TOTAL = NAV_LABELS.length; // 13 slides (0–12)
+
+// Slug → slide index for menu jump navigation (?slide=audience etc.)
+const SLIDE_SLUGS: Record<string, number> = {
+  welcome: 0,
+  hub: 1,
+  audience: 2,
+  luxury: 3,
+  experience: 4,
+  retail: 5,
+  partners: 6,
+  dining: 7,
+  food: 8,
+  events: 9,
+  leasing: 10,
+  venues: 11,
+  brand: 12,
+  pitch: 13,
+  contact: 14,
+};
 
 // ─── transition ───────────────────────────────────────────────────────────────
 
@@ -154,6 +211,343 @@ function CinematicBg({ src }: { src: string }) {
         }}
       />
     </>
+  );
+}
+
+// Same overlay stack as CinematicBg, but plays a muted looping video instead of a still image.
+// Keeps every premium gradient/vignette intact so existing slide content reads identically.
+function CinematicVideoBg({ src, poster }: { src: string; poster?: string }) {
+  return (
+    <>
+      <video
+        src={src}
+        poster={poster}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        aria-hidden
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          display: "block",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "linear-gradient(to bottom, rgba(12,10,6,0.72) 0%, rgba(12,10,6,0.15) 38%, rgba(12,10,6,0.15) 55%, rgba(12,10,6,0.80) 100%)",
+          pointerEvents: "none",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "linear-gradient(105deg, rgba(12,10,6,0.80) 0%, rgba(12,10,6,0.35) 44%, transparent 68%)",
+          pointerEvents: "none",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          boxShadow: "inset 0 0 150px 60px rgba(12,10,6,0.50)",
+          pointerEvents: "none",
+        }}
+      />
+    </>
+  );
+}
+
+// ─── Narration scripts (one per slide) ────────────────────────────────────────
+const NARRATION_SCRIPTS: string[] = [
+  // 0 — Welcome / Splash
+  "Welcome... to American Dream. Not a mall... but a destination. Three million square feet of luxury... entertainment... and the extraordinary.",
+  // 1 — Hub
+  "Behold... American Dream. Every world... within reach. The luxury wing... the dining halls... the arena. One destination... one map... one click away.",
+  // 2 — Audience
+  "Sixty million visitors... every year. Eighteen million... from the New York metro. The most affluent... most aspirational shoppers in America... walk through these doors.",
+  // 3 — Luxury Wing
+  "The Luxury Wing. Hermès. Saint Laurent. Tiffany. The greatest concentration of luxury... in the tri-state area. Under one... extraordinary roof.",
+  // 4 — Experience
+  "More than retail. American Dream... is an experience. From the indoor water park... to the snow-capped mountain. Every visit... unforgettable.",
+  // 5 — Retail & Brands
+  "Over four hundred and fifty stores. From flagship destinations... to the brands defining tomorrow. Where culture... meets commerce.",
+  // 6 — Our Partners
+  "We partner with the world's most influential brands. Apple. Sephora. Nike. Each one chose American Dream... for the audience we deliver.",
+  // 7 — Dining
+  "Sixty restaurants. Michelin-starred chefs. Curated food halls. A destination... for taste.",
+  // 8 — Food & Restaurants
+  "From Italian fine dining... to American classics. Every craving satisfied. Every visit... a journey for the senses.",
+  // 9 — Events
+  "Concerts. Brand activations. Fashion shows. Eighteen thousand seats. World-class production. An audience... ready to be moved.",
+  // 10 — Leasing Paths
+  "Four paths. Luxury. Retail. Dining. Pop-up. Each one... designed to elevate your brand.",
+  // 11 — Venues
+  "The Arena. The Performing Arts Center. The Expo Hall. Private suites. Every scale... every format... every audience.",
+  // 12 — Your Brand Here
+  "Imagine your flagship... right here. Type your name. Watch it come to life... inside American Dream. This... is your future.",
+  // 13 — AI Sales Pitch
+  "Your custom proposal... in seconds. Type your brand. Our AI crafts... a strategic pitch. Audience match. Projected revenue. Recommended zone. Personalized... for you.",
+  // 14 — Contact
+  "The next move... is yours. Lease a space. Sponsor an event. Book a venue. Let us build... the future of retail... together.",
+];
+
+// ─── Premium Voice Narrator ──────────────────────────────────────────────────
+function NarratorButton({
+  current,
+  onStart,
+  onEnd,
+  hidden,
+}: {
+  current: number;
+  onStart: () => void;
+  onEnd: () => void;
+  hidden?: boolean;
+}) {
+  const [playing, setPlaying] = useState(false);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
+
+  // Pick a melodious, premium female voice
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+
+    const pickVoice = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices.length) return;
+      // Tier 1: Microsoft "Natural" online voices — by far the most realistic on Windows
+      const tier1 = voices.find((v) =>
+        /Microsoft Aria Online|Microsoft Jenny Online|Microsoft Sonia Online|Microsoft Libby Online|Microsoft Michelle Online|Microsoft Ava Online/i.test(v.name),
+      );
+      // Tier 2: Premium macOS/iOS female voices — naturally melodic
+      const tier2 = voices.find((v) =>
+        /Samantha|Victoria|Karen|Moira|Tessa|Allison|Ava|Susan|Serena/i.test(v.name),
+      );
+      // Tier 3: Google's neural female voices
+      const tier3 = voices.find((v) =>
+        /Google UK English Female|Google US English.*Female|Google.*en.*Female/i.test(v.name),
+      );
+      // Tier 4: Any voice explicitly labeled female + English
+      const tier4 = voices.find(
+        (v) => /female/i.test(v.name) && /en-GB|en-US|en-AU/i.test(v.lang),
+      );
+      // Tier 5: Common Microsoft female voices (older but workable)
+      const tier5 = voices.find((v) =>
+        /Microsoft Zira|Microsoft Eva|Microsoft Hazel|Microsoft Susan/i.test(v.name),
+      );
+      // Tier 6: UK English (often female-default on browsers)
+      const tier6 = voices.find((v) => /en-GB/i.test(v.lang));
+      // Tier 7: US English fallback
+      const tier7 = voices.find((v) => /en-US/i.test(v.lang));
+      voiceRef.current =
+        tier1 || tier2 || tier3 || tier4 || tier5 || tier6 || tier7 || voices[0];
+    };
+
+    pickVoice();
+    window.speechSynthesis.onvoiceschanged = pickVoice;
+    return () => {
+      window.speechSynthesis.onvoiceschanged = null;
+    };
+  }, []);
+
+  // Stop narration when slide changes
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    if (playing) {
+      window.speechSynthesis.cancel();
+      setPlaying(false);
+      onEnd();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current]);
+
+  const stop = useCallback(() => {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    setPlaying(false);
+    onEnd();
+  }, [onEnd]);
+
+  const start = useCallback(() => {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    const text = NARRATION_SCRIPTS[current] || "";
+    if (!text) return;
+
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    if (voiceRef.current) u.voice = voiceRef.current;
+    u.rate = 0.85;     // Gentle, unhurried, melodic
+    u.pitch = 1.08;    // Slightly higher — soft, feminine, warm
+    u.volume = 1.0;
+    u.onend = () => {
+      setPlaying(false);
+      onEnd();
+    };
+    u.onerror = () => {
+      setPlaying(false);
+      onEnd();
+    };
+    utteranceRef.current = u;
+    setPlaying(true);
+    onStart();
+    window.speechSynthesis.speak(u);
+  }, [current, onStart, onEnd]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  if (hidden) return null;
+
+  return (
+    <motion.button
+      onClick={playing ? stop : start}
+      initial={{ opacity: 0, scale: 0.92 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5, delay: 0.5, ease: EASE }}
+      whileHover={{
+        background: "rgba(201,169,110,0.14)",
+        borderColor: "rgba(201,169,110,0.45)",
+      }}
+      whileTap={{ scale: 0.94 }}
+      style={{
+        position: "fixed",
+        bottom: "clamp(22px, 3vh, 36px)",
+        left: "clamp(96px, 8vw, 130px)",
+        zIndex: 100,
+        height: "44px",
+        padding: "0 18px 0 14px",
+        borderRadius: "9999px",
+        background: playing
+          ? "rgba(201,169,110,0.18)"
+          : "rgba(255,255,255,0.04)",
+        backdropFilter: "blur(18px) saturate(160%)",
+        WebkitBackdropFilter: "blur(18px) saturate(160%)",
+        border: `1px solid ${
+          playing ? "rgba(201,169,110,0.55)" : "rgba(255,255,255,0.10)"
+        }`,
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        cursor: "pointer",
+        color: playing ? "#C9A96E" : "rgba(255,255,255,0.85)",
+        fontFamily: "var(--font-montserrat)",
+        fontSize: "11px",
+        fontWeight: 600,
+        letterSpacing: "0.18em",
+        textTransform: "uppercase",
+        boxShadow: playing
+          ? "0 8px 28px rgba(201,169,110,0.35), inset 0 1px 0 rgba(255,255,255,0.12)"
+          : "0 8px 24px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.05)",
+        transition: "background 0.3s ease, border-color 0.3s ease",
+      }}
+      aria-label={playing ? "Stop narration" : "Listen to narration"}
+    >
+      {/* Animated waveform when playing, play icon when paused */}
+      {playing ? (
+        <div style={{ display: "flex", alignItems: "center", gap: "3px", height: "16px" }}>
+          {[0, 1, 2, 3].map((i) => (
+            <motion.div
+              key={i}
+              animate={{
+                height: ["6px", "14px", "6px"],
+              }}
+              transition={{
+                duration: 0.9,
+                repeat: Infinity,
+                delay: i * 0.12,
+                ease: "easeInOut",
+              }}
+              style={{
+                width: "2.5px",
+                background: "#C9A96E",
+                borderRadius: "2px",
+              }}
+            />
+          ))}
+        </div>
+      ) : (
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <path
+            d="M3 2.5L13 8L3 13.5V2.5Z"
+            fill="rgba(201,169,110,0.85)"
+            stroke="rgba(201,169,110,0.95)"
+            strokeWidth="0.8"
+            strokeLinejoin="round"
+          />
+        </svg>
+      )}
+      <span>{playing ? "Listening" : "Listen"}</span>
+    </motion.button>
+  );
+}
+
+function MuteButton({ muted, onToggle, hidden }: { muted: boolean; onToggle: () => void; hidden?: boolean }) {
+  if (hidden) return null;
+  return (
+    <motion.button
+      onClick={onToggle}
+      initial={{ opacity: 0, scale: 0.92 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5, delay: 0.4, ease: EASE }}
+      whileHover={{
+        background: "rgba(201,169,110,0.10)",
+        borderColor: "rgba(201,169,110,0.35)",
+      }}
+      whileTap={{ scale: 0.94 }}
+      aria-label={muted ? "Unmute background music" : "Mute background music"}
+      style={{
+        // Bottom-left — well clear of the deck-nav prev/next/counter cluster
+        // on the bottom-right and the menu pill on the top-left.
+        position: "fixed",
+        left: "clamp(20px, 2.4vw, 32px)",
+        bottom: "clamp(20px, 2.6vh, 32px)",
+        width: "40px",
+        height: "40px",
+        borderRadius: "50%",
+        background: "rgba(255,255,255,0.04)",
+        backdropFilter: "blur(24px) saturate(160%)",
+        WebkitBackdropFilter: "blur(24px) saturate(160%)",
+        border: "1px solid rgba(255,255,255,0.10)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+        zIndex: 130,
+        color: muted ? "rgba(201,169,110,0.45)" : "#C9A96E",
+        boxShadow:
+          "0 4px 20px rgba(0,0,0,0.20), inset 0 1px 0 rgba(255,255,255,0.04)",
+        transition: "border-color 0.3s ease, background 0.3s ease",
+      }}
+    >
+      {muted ? (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+          <line x1="22" y1="9" x2="16" y2="15" />
+          <line x1="16" y1="9" x2="22" y2="15" />
+        </svg>
+      ) : (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+        </svg>
+      )}
+    </motion.button>
   );
 }
 
@@ -394,6 +788,7 @@ function StatCard({
 
 function SplashSlide({ onEnter }: { onEnter: () => void }) {
   const [phase, setPhase] = useState(0); // 0 = "Not a mall", 1 = "American Dream"
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   // Loop: 0 → 1 → 0 → 1 ...
   useEffect(() => {
@@ -404,6 +799,41 @@ function SplashSlide({ onEnter }: { onEnter: () => void }) {
     );
     return () => clearTimeout(timer);
   }, [phase]);
+
+  // Force-start the cold open video — autoplay attr alone isn't enough
+  // when React mounts because Chrome checks muted state at the moment
+  // play() is called, and the muted prop sometimes lands a tick late.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = true;
+    v.defaultMuted = true;
+    v.playsInline = true;
+
+    const tryPlay = () => {
+      const p = v.play();
+      if (p && typeof p.catch === "function") {
+        p.catch(() => {
+          // Will recover on first user gesture (already muted, so it's allowed).
+        });
+      }
+    };
+    tryPlay();
+    // Retry once data is available — covers slow CDN starts
+    v.addEventListener("loadeddata", tryPlay, { once: true });
+    v.addEventListener("canplay", tryPlay, { once: true });
+
+    const onGesture = () => tryPlay();
+    window.addEventListener("pointerdown", onGesture, { once: true });
+    window.addEventListener("touchstart", onGesture, { once: true });
+    window.addEventListener("keydown", onGesture, { once: true });
+
+    return () => {
+      window.removeEventListener("pointerdown", onGesture);
+      window.removeEventListener("touchstart", onGesture);
+      window.removeEventListener("keydown", onGesture);
+    };
+  }, []);
 
   const SPLASH_STATS = [
     { value: "40M+", label: "Annual Visitors" },
@@ -422,15 +852,16 @@ function SplashSlide({ onEnter }: { onEnter: () => void }) {
         background: "#0A0F1E",
       }}
     >
-      {/* Full-quality background video */}
+      {/* Cold open — 60s cinematic background video */}
       <video
+        ref={videoRef}
         src={HERO_VIDEO}
         poster={HERO_POSTER}
         autoPlay
         muted
         loop
         playsInline
-        preload="auto"
+        preload="metadata"
         style={{
           position: "absolute",
           inset: 0,
@@ -440,10 +871,10 @@ function SplashSlide({ onEnter }: { onEnter: () => void }) {
         }}
       />
 
-      {/* Deep blue overlay stack — extra heavy */}
-      <div style={{ position: "absolute", inset: 0, background: "rgba(10,15,30,0.52)", pointerEvents: "none" }} />
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(10,15,30,0.82) 0%, rgba(10,15,30,0.35) 28%, rgba(10,15,30,0.35) 55%, rgba(10,15,30,0.90) 100%)", pointerEvents: "none" }} />
-      <div style={{ position: "absolute", inset: 0, boxShadow: "inset 0 0 260px 110px rgba(10,15,30,0.65)", pointerEvents: "none" }} />
+      {/* Lighter overlay stack — lets the cinematic breathe while keeping text legible */}
+      <div style={{ position: "absolute", inset: 0, background: "rgba(10,15,30,0.22)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(10,15,30,0.55) 0%, rgba(10,15,30,0.10) 30%, rgba(10,15,30,0.15) 60%, rgba(10,15,30,0.70) 100%)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", inset: 0, boxShadow: "inset 0 0 200px 80px rgba(10,15,30,0.40)", pointerEvents: "none" }} />
 
       {/* Ambient gold orb */}
       <div aria-hidden style={{ position: "absolute", top: "20%", left: "50%", transform: "translateX(-50%)", width: "600px", height: "600px", background: "radial-gradient(ellipse at center, rgba(201,169,110,0.06) 0%, transparent 70%)", filter: "blur(80px)", pointerEvents: "none" }} />
@@ -1229,6 +1660,208 @@ function PropertySlide() {
   );
 }
 
+// ─── SLIDE 1 — THE HUB (Interactive Aerial Map) ───────────────────────────────
+
+function HubSlide() {
+  const [activeZone, setActiveZone] = useState<string | null>(null);
+  const jumpTo = useCallback((index: number) => {
+    window.dispatchEvent(
+      new CustomEvent("deck:goto", { detail: { index } })
+    );
+  }, []);
+
+  const zones = [
+    { id: "luxury", label: "Luxury", x: "25%", y: "30%", index: 3 },
+    { id: "retail", label: "Retail", x: "65%", y: "40%", index: 5 },
+    { id: "dining", label: "Dining", x: "35%", y: "65%", index: 7 },
+    { id: "entertainment", label: "Entertainment", x: "70%", y: "70%", index: 9 },
+    { id: "events", label: "Events", x: "50%", y: "25%", index: 11 },
+  ];
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "100%",
+        overflow: "hidden",
+        background: "#0A0F1E",
+      }}
+    >
+      {/* Aerial Map Background */}
+      <img
+        src="https://res.cloudinary.com/dwo1snivu/image/upload/v1777473153/ariel_map_i1khax.jpg"
+        alt="American Dream Aerial Map"
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+        }}
+      />
+
+      {/* Dark Overlay */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "linear-gradient(135deg, rgba(10,15,30,0.42) 0%, rgba(10,15,30,0.58) 100%)",
+          pointerEvents: "none",
+        }}
+      />
+      {/* Center vignette to focus text */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "radial-gradient(ellipse at center, rgba(10,15,30,0.30) 0%, transparent 70%)",
+          pointerEvents: "none",
+        }}
+      />
+
+      <SlideTopBar index={1} />
+
+      {/* Hotspots Container */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 2 }}>
+        {zones.map((zone) => (
+          <motion.div
+            key={zone.id}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+            style={{
+              position: "absolute",
+              left: zone.x,
+              top: zone.y,
+              transform: "translate(-50%, -50%)",
+              zIndex: 3,
+            }}
+            onMouseEnter={() => setActiveZone(zone.id)}
+            onMouseLeave={() => setActiveZone(null)}
+          >
+            {/* Pulsing Ring */}
+            <motion.div
+              animate={{
+                boxShadow: [
+                  "0 0 0 0 rgba(201,169,110,0.7)",
+                  "0 0 0 20px rgba(201,169,110,0)",
+                ],
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+              style={{
+                position: "absolute",
+                width: "60px",
+                height: "60px",
+                borderRadius: "50%",
+                border: "2px solid rgba(201,169,110,0.6)",
+                inset: 0,
+                cursor: "pointer",
+              }}
+            />
+
+            {/* Center Circle */}
+            <motion.button
+              onClick={() => jumpTo(zone.index)}
+              whileHover={{ scale: 1.2 }}
+              whileTap={{ scale: 0.95 }}
+              style={{
+                position: "absolute",
+                width: "50px",
+                height: "50px",
+                borderRadius: "50%",
+                background: activeZone === zone.id
+                  ? "linear-gradient(135deg, #C9A96E 0%, #D4B896 100%)"
+                  : "rgba(201,169,110,0.4)",
+                border: "2px solid rgba(201,169,110,0.8)",
+                color: "#0A0F1E",
+                fontSize: "12px",
+                fontWeight: 700,
+                cursor: "pointer",
+                transition: "all 0.3s ease",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              ▼
+            </motion.button>
+
+            {/* Label */}
+            {activeZone === zone.id && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: -50 }}
+                exit={{ opacity: 0, y: -10 }}
+                style={{
+                  position: "absolute",
+                  top: "-50px",
+                  left: "50%",
+                  transform: "translateX(-50%)",
+                  whiteSpace: "nowrap",
+                  fontFamily: "var(--font-montserrat)",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  color: "#C9A96E",
+                  letterSpacing: "0.05em",
+                  textTransform: "uppercase",
+                }}
+              >
+                {zone.label}
+              </motion.div>
+            )}
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Center Title */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          textAlign: "center",
+          zIndex: 1,
+          pointerEvents: "none",
+        }}
+      >
+        <div style={{ color: "white" }}>
+          <h1
+            style={{
+              fontFamily: "var(--font-fraunces)",
+              fontSize: "clamp(36px, 5vw, 56px)",
+              fontWeight: 600,
+              marginBottom: "12px",
+              color: "#ffffff",
+            }}
+          >
+            American Dream
+          </h1>
+          <p
+            style={{
+              fontFamily: "var(--font-montserrat)",
+              fontSize: "14px",
+              letterSpacing: "0.15em",
+              textTransform: "uppercase",
+              color: "rgba(255,255,255,0.6)",
+            }}
+          >
+            Click any zone to explore
+          </p>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 // ─── SLIDE 2 — THE AUDIENCE ───────────────────────────────────────────────────
 
 function AudienceSlide() {
@@ -1241,8 +1874,8 @@ function AudienceSlide() {
         overflow: "hidden",
       }}
     >
-      <CinematicBg src={IMG.atelier} />
-      <SlideTopBar index={3} />
+      <CinematicVideoBg src={LOOP_VIDEOS.audience} />
+      <SlideTopBar index={1} />
 
       <div
         style={{
@@ -1319,8 +1952,8 @@ function LuxurySlide() {
         overflow: "hidden",
       }}
     >
-      <CinematicBg src={IMG.luxury} />
-      <SlideTopBar index={4} />
+      <CinematicVideoBg src={LOOP_VIDEOS.luxury} />
+      <SlideTopBar index={2} />
 
       <div
         style={{
@@ -1406,7 +2039,7 @@ function LuxurySlide() {
   );
 }
 
-// ─── SLIDE 5 — THE EXPERIENCE (collage) ───────────────────────────────────────
+// ─── SLIDE 3 — THE EXPERIENCE (collage) ───────────────────────────────────────
 
 function ExperienceCollageSlide() {
   const GRID = [
@@ -1447,7 +2080,7 @@ function ExperienceCollageSlide() {
         overflow: "hidden",
       }}
     >
-      <SlideTopBar index={5} />
+      <SlideTopBar index={3} />
 
       {/* ── Main layout: text panel left + image grid right ── */}
       <div
@@ -1688,7 +2321,7 @@ function RetailSlide() {
         overflow: "hidden",
       }}
     >
-      <CinematicBg src={IMG.interior} />
+      <CinematicVideoBg src={LOOP_VIDEOS.retail} />
       {/* Extra right-side darken for card readability */}
       <div
         style={{
@@ -1700,7 +2333,7 @@ function RetailSlide() {
           zIndex: 2,
         }}
       />
-      <SlideTopBar index={6} />
+      <SlideTopBar index={4} />
 
       <div
         style={{
@@ -1889,7 +2522,7 @@ function BrandPartnersSlide() {
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(10,15,30,0.60) 0%, rgba(10,15,30,0.30) 40%, rgba(10,15,30,0.50) 100%)", pointerEvents: "none" }} />
       <div style={{ position: "absolute", inset: 0, boxShadow: "inset 0 0 200px 80px rgba(10,15,30,0.50)", pointerEvents: "none" }} />
 
-      <SlideTopBar index={7} />
+      <SlideTopBar index={5} />
 
       {/* ── Layout: 40% top (text + stats) / 60% bottom (marquee rows) ── */}
       <div
@@ -2050,10 +2683,8 @@ function DiningSlide() {
         overflow: "hidden",
       }}
     >
-      <CinematicBg src={IMG.dining} />
-      {/* Extra overlay for dining */}
-      <div style={{ position: "absolute", inset: 0, background: "rgba(10,15,30,0.18)", pointerEvents: "none" }} />
-      <SlideTopBar index={8} />
+      <CinematicVideoBg src={LOOP_VIDEOS.dining} />
+      <SlideTopBar index={6} />
 
       <div
         style={{
@@ -2249,7 +2880,7 @@ function FoodRestaurantsSlide() {
       <div aria-hidden style={{ position: "absolute", bottom: "-15%", right: "10%", width: "500px", height: "500px", background: "radial-gradient(ellipse at center, rgba(60,100,220,0.06) 0%, transparent 70%)", filter: "blur(60px)", pointerEvents: "none" }} />
       <div aria-hidden style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(rgba(255,255,255,0.018) 1px, transparent 1px)", backgroundSize: "28px 28px", pointerEvents: "none" }} />
 
-      <SlideTopBar index={9} />
+      <SlideTopBar index={7} />
 
       {/* Glass container — full slide */}
       <div
@@ -2443,8 +3074,10 @@ function EventsSlide() {
         overflow: "hidden",
       }}
     >
+      {/* Arena/concert image — matches the "18,000 seats" headline.
+          The Big SNOW loop video is reserved for an Entertainment slide if added later. */}
       <CinematicBg src={IMG.concert} />
-      <SlideTopBar index={10} />
+      <SlideTopBar index={8} />
 
       <div
         style={{
@@ -2569,7 +3202,7 @@ function LeasingSlide({
           zIndex: 2,
         }}
       />
-      <SlideTopBar index={11} />
+      <SlideTopBar index={9} />
 
       <div
         style={{
@@ -2736,7 +3369,7 @@ function VenuesSlide() {
       }}
     >
       <CinematicBg src={IMG.arena} />
-      <SlideTopBar index={12} />
+      <SlideTopBar index={10} />
 
       <div
         style={{
@@ -2868,7 +3501,1350 @@ function VenuesSlide() {
   );
 }
 
-// ─── SLIDE 9 — CLOSING CTA ────────────────────────────────────────────────────
+// ─── SLIDE 10 — IMAGINE YOUR BRAND HERE (★ killer feature) ───────────────────
+
+const BRAND_TEMPLATE_MAP: Record<string, keyof typeof STOREFRONTS> = {
+  // Luxury Gold — for the highest-end heritage maisons
+  gucci: "luxury-gold",
+  "louis vuitton": "luxury-gold",
+  louisvuitton: "luxury-gold",
+  lv: "luxury-gold",
+  hermes: "luxury-gold",
+  "hermès": "luxury-gold",
+  cartier: "luxury-gold",
+  tiffany: "luxury-gold",
+  "tiffany & co": "luxury-gold",
+  dior: "luxury-gold",
+  versace: "luxury-gold",
+  fendi: "luxury-gold",
+  valentino: "luxury-gold",
+  // Minimal White — for tech-forward minimalist brands
+  apple: "minimal-white",
+  tesla: "minimal-white",
+  "saint laurent": "minimal-white",
+  ysl: "minimal-white",
+  zara: "minimal-white",
+  uniqlo: "minimal-white",
+  cos: "minimal-white",
+  // Classic Black — for high-fashion houses
+  chanel: "classic-black",
+  prada: "classic-black",
+  "bottega veneta": "classic-black",
+  bottega: "classic-black",
+  balenciaga: "classic-black",
+  celine: "classic-black",
+  givenchy: "classic-black",
+  // Warm Bronze — heritage watches & jewelry
+  rolex: "warm-bronze",
+  bulgari: "warm-bronze",
+  bvlgari: "warm-bronze",
+  omega: "warm-bronze",
+  patek: "warm-bronze",
+  "patek philippe": "warm-bronze",
+  "ralph lauren": "warm-bronze",
+  burberry: "warm-bronze",
+  // Modern Retail — sport & lifestyle
+  nike: "modern-retail",
+  sephora: "modern-retail",
+  adidas: "modern-retail",
+  lululemon: "modern-retail",
+  "h&m": "modern-retail",
+  hm: "modern-retail",
+  gap: "modern-retail",
+  "alo yoga": "modern-retail",
+  alo: "modern-retail",
+  "on running": "modern-retail",
+  on: "modern-retail",
+};
+
+const BRAND_DOMAIN_MAP: Record<string, string> = {
+  gucci: "gucci.com",
+  "louis vuitton": "louisvuitton.com",
+  louisvuitton: "louisvuitton.com",
+  lv: "louisvuitton.com",
+  hermes: "hermes.com",
+  "hermès": "hermes.com",
+  cartier: "cartier.com",
+  tiffany: "tiffany.com",
+  "tiffany & co": "tiffany.com",
+  dior: "dior.com",
+  versace: "versace.com",
+  fendi: "fendi.com",
+  valentino: "valentino.com",
+  chanel: "chanel.com",
+  prada: "prada.com",
+  "bottega veneta": "bottegaveneta.com",
+  bottega: "bottegaveneta.com",
+  balenciaga: "balenciaga.com",
+  celine: "celine.com",
+  givenchy: "givenchy.com",
+  rolex: "rolex.com",
+  bulgari: "bulgari.com",
+  bvlgari: "bulgari.com",
+  omega: "omegawatches.com",
+  patek: "patek.com",
+  "patek philippe": "patek.com",
+  "ralph lauren": "ralphlauren.com",
+  burberry: "burberry.com",
+  apple: "apple.com",
+  tesla: "tesla.com",
+  "saint laurent": "ysl.com",
+  ysl: "ysl.com",
+  zara: "zara.com",
+  uniqlo: "uniqlo.com",
+  cos: "cos.com",
+  nike: "nike.com",
+  sephora: "sephora.com",
+  adidas: "adidas.com",
+  lululemon: "lululemon.com",
+  "h&m": "hm.com",
+  hm: "hm.com",
+  gap: "gap.com",
+  "alo yoga": "aloyoga.com",
+  alo: "aloyoga.com",
+  "on running": "on.com",
+  on: "on.com",
+};
+
+function brandTemplate(name: string): keyof typeof STOREFRONTS {
+  const k = name.trim().toLowerCase();
+  return BRAND_TEMPLATE_MAP[k] || "luxury-gold";
+}
+
+function brandDomain(name: string): string {
+  const k = name.trim().toLowerCase();
+  if (BRAND_DOMAIN_MAP[k]) return BRAND_DOMAIN_MAP[k];
+  return k.replace(/\s+/g, "").replace(/[^a-z0-9]/g, "") + ".com";
+}
+
+function brandTitleCase(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+type PitchData = {
+  headline: string;
+  audienceMatch: number;
+  projectedRevenue: string;
+  annualVisitors: string;
+  pitch: string;
+  recommendedZone: string;
+  zoneNote: string;
+};
+
+function CountUp({ to, suffix = "", duration = 1.4 }: { to: number; suffix?: string; duration?: number }) {
+  const [val, setVal] = useState(0);
+  useEffect(() => {
+    const start = performance.now();
+    let raf = 0;
+    const tick = (t: number) => {
+      const k = Math.min(1, (t - start) / (duration * 1000));
+      // Ease-out
+      const eased = 1 - Math.pow(1 - k, 3);
+      setVal(Math.round(to * eased));
+      if (k < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [to, duration]);
+  return (
+    <span>
+      {val}
+      {suffix}
+    </span>
+  );
+}
+
+function PitchStatCard({
+  value,
+  label,
+  delay,
+  isPercent,
+}: {
+  value: string | number;
+  label: string;
+  delay: number;
+  isPercent?: boolean;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.7, ease: EASE, delay }}
+      style={{
+        padding: "16px 22px",
+        background:
+          "linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
+        backdropFilter: "blur(28px) saturate(170%)",
+        WebkitBackdropFilter: "blur(28px) saturate(170%)",
+        border: "1px solid rgba(201,169,110,0.22)",
+        borderRadius: "14px",
+        boxShadow:
+          "0 14px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08)",
+        textAlign: "center",
+      }}
+    >
+      <div
+        style={{
+          fontFamily: "var(--font-fraunces)",
+          fontWeight: 500,
+          fontSize: "clamp(24px, 2.7vw, 32px)",
+          color: "#C9A96E",
+          lineHeight: 1,
+          letterSpacing: "-0.01em",
+          textShadow: "0 6px 22px rgba(201,169,110,0.30)",
+        }}
+      >
+        {isPercent && typeof value === "number" ? (
+          <CountUp to={value} suffix="%" />
+        ) : (
+          value
+        )}
+      </div>
+      <div
+        style={{
+          marginTop: "6px",
+          fontFamily: "var(--font-montserrat)",
+          fontSize: "9px",
+          letterSpacing: "0.22em",
+          textTransform: "uppercase",
+          color: "rgba(255,255,255,0.55)",
+          fontWeight: 600,
+        }}
+      >
+        {label}
+      </div>
+    </motion.div>
+  );
+}
+
+function PitchResult({
+  brandName,
+  pitch,
+  onReset,
+}: {
+  brandName: string;
+  pitch: PitchData;
+  onReset: () => void;
+}) {
+  const [listening, setListening] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const captureRef = useRef<HTMLDivElement | null>(null);
+  const words = pitch.pitch.split(" ");
+
+  const downloadPitch = useCallback(async () => {
+    if (!captureRef.current || downloading) return;
+    setDownloading(true);
+    try {
+      const { toPng } = await import("html-to-image");
+      const dataUrl = await toPng(captureRef.current, {
+        backgroundColor: "#0A0F1E",
+        pixelRatio: 2,
+        cacheBust: true,
+      });
+      const link = document.createElement("a");
+      link.download = `American-Dream-Pitch-${brandName.replace(/\s+/g, "-")}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error("[PitchResult] Download failed:", err);
+    } finally {
+      setDownloading(false);
+    }
+  }, [brandName, downloading]);
+
+  const speak = useCallback(() => {
+    if (typeof window === "undefined" || !window.speechSynthesis) return;
+    if (listening) {
+      window.speechSynthesis.cancel();
+      setListening(false);
+      return;
+    }
+    const fullText = `${pitch.headline}. ${pitch.pitch} Recommended zone: ${pitch.recommendedZone}. ${pitch.zoneNote}`;
+    const u = new SpeechSynthesisUtterance(fullText);
+    const voices = window.speechSynthesis.getVoices();
+    const preferred =
+      voices.find((v) =>
+        /Microsoft Aria Online|Microsoft Jenny Online|Microsoft Sonia Online|Samantha|Victoria|Karen|Google UK English Female/i.test(
+          v.name,
+        ),
+      ) ||
+      voices.find((v) => /female/i.test(v.name) && /en/i.test(v.lang)) ||
+      voices.find((v) => /en-GB|en-US/i.test(v.lang));
+    if (preferred) u.voice = preferred;
+    u.rate = 0.85;
+    u.pitch = 1.08;
+    u.onend = () => setListening(false);
+    u.onerror = () => setListening(false);
+    setListening(true);
+    window.speechSynthesis.speak(u);
+  }, [pitch, listening]);
+
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  return (
+    <motion.div
+      key="pitch-result"
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.7, ease: EASE }}
+      style={{
+        width: "100%",
+        maxWidth: "1500px",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
+      <div
+        ref={captureRef}
+        data-pitch-capture
+        style={{
+          width: "100%",
+          padding: "20px 16px",
+          background: "transparent",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+      {/* Eyebrow */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: EASE, delay: 0.1 }}
+        style={{
+          fontFamily: "var(--font-montserrat)",
+          fontSize: "10px",
+          letterSpacing: "0.32em",
+          textTransform: "uppercase",
+          color: "#C9A96E",
+          fontWeight: 600,
+          marginBottom: "12px",
+          textShadow: "0 6px 24px rgba(0,0,0,0.50)",
+          textAlign: "center",
+        }}
+      >
+        Personalized Proposal · For {brandName}
+      </motion.div>
+
+      {/* Editorial headline (more presence) */}
+      <motion.h1
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: EASE, delay: 0.2 }}
+        style={{
+          fontFamily: "var(--font-fraunces)",
+          fontStyle: "italic",
+          fontWeight: 500,
+          fontSize: "clamp(26px, 3.6vw, 42px)",
+          lineHeight: 1.08,
+          color: "#ffffff",
+          letterSpacing: "-0.01em",
+          margin: 0,
+          maxWidth: "1000px",
+          textAlign: "center",
+          textShadow: "0 12px 40px rgba(0,0,0,0.70), 0 4px 12px rgba(0,0,0,0.50)",
+        }}
+      >
+        {pitch.headline}
+      </motion.h1>
+
+      {/* Gold rule */}
+      <motion.div
+        initial={{ width: 0, opacity: 0 }}
+        animate={{ width: "48px", opacity: 1 }}
+        transition={{ duration: 0.6, ease: EASE, delay: 0.5 }}
+        style={{
+          height: "1px",
+          background: "#C9A96E",
+          margin: "16px 0 18px",
+          boxShadow: "0 0 12px rgba(201,169,110,0.55)",
+        }}
+      />
+
+      {/* Two-column layout: pitch text | stats stack */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1.55fr) minmax(240px, 1fr)",
+          gap: "20px",
+          width: "100%",
+          marginBottom: "18px",
+        }}
+      >
+        {/* LEFT: Pitch paragraph */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.6 }}
+          style={{
+            padding: "20px 26px",
+            background: "rgba(0,0,0,0.32)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            borderRadius: "16px",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              fontFamily: "var(--font-montserrat)",
+              fontSize: "9.5px",
+              letterSpacing: "0.30em",
+              textTransform: "uppercase",
+              color: "rgba(201,169,110,0.90)",
+              fontWeight: 600,
+              marginBottom: "10px",
+            }}
+          >
+            The Pitch
+          </div>
+          <p
+            style={{
+              fontFamily: "var(--font-fraunces)",
+              fontWeight: 400,
+              fontSize: "clamp(13px, 1.15vw, 15.5px)",
+              lineHeight: 1.55,
+              color: "rgba(255,255,255,0.94)",
+              margin: 0,
+              letterSpacing: "0.005em",
+            }}
+          >
+            {words.map((w, i) => (
+              <motion.span
+                key={i}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.22, delay: 0.7 + i * 0.018 }}
+                style={{ display: "inline-block", marginRight: "0.28em" }}
+              >
+                {w}
+              </motion.span>
+            ))}
+          </p>
+        </motion.div>
+
+        {/* RIGHT: Three stat cards stacked vertically */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+          }}
+        >
+          <PitchStatCard
+            value={pitch.audienceMatch}
+            label="Audience Match"
+            delay={0.55}
+            isPercent
+          />
+          <PitchStatCard value={pitch.projectedRevenue} label="Projected Revenue" delay={0.65} />
+          <PitchStatCard value={pitch.annualVisitors} label="Annual Visitors" delay={0.75} />
+        </div>
+      </div>
+
+      {/* Recommended Zone — compact horizontal */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: EASE, delay: 0.95 + words.length * 0.018 }}
+        style={{
+          width: "100%",
+          padding: "12px 22px",
+          background:
+            "linear-gradient(135deg, rgba(201,169,110,0.12) 0%, rgba(201,169,110,0.03) 100%)",
+          border: "1px solid rgba(201,169,110,0.32)",
+          borderRadius: "12px",
+          display: "flex",
+          alignItems: "center",
+          gap: "16px",
+        }}
+      >
+        <div
+          style={{
+            width: "8px",
+            height: "8px",
+            borderRadius: "50%",
+            background: "#C9A96E",
+            boxShadow: "0 0 14px rgba(201,169,110,0.85)",
+            flexShrink: 0,
+          }}
+        />
+        <div
+          style={{
+            fontFamily: "var(--font-montserrat)",
+            fontSize: "9px",
+            letterSpacing: "0.28em",
+            textTransform: "uppercase",
+            color: "rgba(201,169,110,0.90)",
+            fontWeight: 600,
+            flexShrink: 0,
+          }}
+        >
+          Recommended Zone
+        </div>
+        <div
+          style={{
+            fontFamily: "var(--font-fraunces)",
+            fontSize: "clamp(14px, 1.2vw, 17px)",
+            fontWeight: 500,
+            color: "#ffffff",
+            flexShrink: 0,
+          }}
+        >
+          {pitch.recommendedZone}
+        </div>
+        <div
+          style={{
+            fontFamily: "var(--font-montserrat)",
+            fontSize: "11px",
+            color: "rgba(255,255,255,0.62)",
+            lineHeight: 1.4,
+            flex: 1,
+            textAlign: "right",
+          }}
+        >
+          {pitch.zoneNote}
+        </div>
+      </motion.div>
+      </div>
+
+      {/* Action buttons (NOT included in download capture) */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: EASE, delay: 1.05 + words.length * 0.018 }}
+        style={{
+          marginTop: "18px",
+          display: "flex",
+          gap: "12px",
+          justifyContent: "center",
+          flexWrap: "wrap",
+        }}
+      >
+        <motion.button
+          onClick={speak}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.96 }}
+          style={{
+            padding: "12px 26px",
+            background: listening
+              ? "rgba(201,169,110,0.20)"
+              : "rgba(255,255,255,0.06)",
+            border: `1px solid ${
+              listening ? "rgba(201,169,110,0.60)" : "rgba(201,169,110,0.30)"
+            }`,
+            borderRadius: "9999px",
+            color: listening ? "#C9A96E" : "rgba(255,255,255,0.92)",
+            fontFamily: "var(--font-montserrat)",
+            fontSize: "11px",
+            fontWeight: 600,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "10px",
+            backdropFilter: "blur(18px)",
+            WebkitBackdropFilter: "blur(18px)",
+            transition: "all 0.3s ease",
+          }}
+        >
+          {listening ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "3px", height: "12px" }}>
+              {[0, 1, 2, 3].map((i) => (
+                <motion.div
+                  key={i}
+                  animate={{ height: ["5px", "12px", "5px"] }}
+                  transition={{
+                    duration: 0.9,
+                    repeat: Infinity,
+                    delay: i * 0.12,
+                    ease: "easeInOut",
+                  }}
+                  style={{ width: "2.5px", background: "#C9A96E", borderRadius: "2px" }}
+                />
+              ))}
+            </div>
+          ) : (
+            <span style={{ fontSize: "10px" }}>▶</span>
+          )}
+          {listening ? "Listening" : "Listen"}
+        </motion.button>
+
+        <motion.button
+          onClick={downloadPitch}
+          disabled={downloading}
+          whileHover={{ scale: downloading ? 1 : 1.03 }}
+          whileTap={{ scale: downloading ? 1 : 0.96 }}
+          style={{
+            padding: "12px 32px",
+            background: "linear-gradient(135deg, #C9A96E 0%, #B59458 100%)",
+            border: "none",
+            borderRadius: "9999px",
+            color: "#0A0F1E",
+            fontFamily: "var(--font-montserrat)",
+            fontSize: "11px",
+            fontWeight: 700,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            cursor: downloading ? "wait" : "pointer",
+            opacity: downloading ? 0.75 : 1,
+            boxShadow:
+              "0 12px 32px rgba(201,169,110,0.36), inset 0 1px 0 rgba(255,255,255,0.22)",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "10px",
+          }}
+        >
+          {downloading ? (
+            <>
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
+                style={{
+                  width: "12px",
+                  height: "12px",
+                  border: "2px solid rgba(10,15,30,0.30)",
+                  borderTopColor: "#0A0F1E",
+                  borderRadius: "50%",
+                }}
+              />
+              Preparing…
+            </>
+          ) : (
+            <>
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                <path
+                  d="M8 2V11M8 11L4.5 7.5M8 11L11.5 7.5M2.5 13.5H13.5"
+                  stroke="#0A0F1E"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              Download Pitch
+            </>
+          )}
+        </motion.button>
+
+        <motion.button
+          onClick={onReset}
+          whileHover={{ background: "rgba(255,255,255,0.08)" }}
+          whileTap={{ scale: 0.96 }}
+          style={{
+            padding: "12px 24px",
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.10)",
+            borderRadius: "9999px",
+            color: "rgba(255,255,255,0.65)",
+            fontFamily: "var(--font-montserrat)",
+            fontSize: "11px",
+            fontWeight: 600,
+            letterSpacing: "0.18em",
+            textTransform: "uppercase",
+            cursor: "pointer",
+            backdropFilter: "blur(18px)",
+            WebkitBackdropFilter: "blur(18px)",
+          }}
+        >
+          Try Another
+        </motion.button>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// Update PitchStatCard to be more compact (smaller)
+function PitchSlide({ openInquiry }: { openInquiry: (t?: InquiryType) => void }) {
+  const [brand, setBrand] = useState("");
+  const [phase, setPhase] = useState<"input" | "loading" | "result">("input");
+  const [submitted, setSubmitted] = useState("");
+  const [pitchData, setPitchData] = useState<PitchData | null>(null);
+
+  const onGenerate = useCallback(async () => {
+    const v = brand.trim();
+    if (!v) return;
+    setSubmitted(v);
+    setPhase("loading");
+    try {
+      const res = await fetch("/api/generate-pitch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brandName: v }),
+      });
+      const data = (await res.json()) as { ok: boolean; pitch?: PitchData; error?: string };
+      if (data.ok && data.pitch) {
+        setPitchData(data.pitch);
+        window.setTimeout(() => setPhase("result"), 400);
+      } else {
+        console.error("[PitchSlide] Failed:", data.error);
+        setPhase("input");
+      }
+    } catch (error) {
+      console.error("[PitchSlide] Error:", error);
+      setPhase("input");
+    }
+  }, [brand]);
+
+  const onReset = useCallback(() => {
+    setPhase("input");
+    setBrand("");
+    setSubmitted("");
+    setPitchData(null);
+  }, []);
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "100%",
+        overflow: "hidden",
+        background: "#0A0F1E",
+      }}
+    >
+      <CinematicVideoBg src="https://res.cloudinary.com/dwo1snivu/video/upload/v1777472936/1_online-video-cutter.com_wzzhoe.mp4" />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "linear-gradient(180deg, rgba(10,15,30,0.20) 0%, rgba(10,15,30,0.35) 60%, rgba(10,15,30,0.55) 100%)",
+          pointerEvents: "none",
+        }}
+      />
+
+      <SlideTopBar index={13} />
+
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "clamp(70px, 10vh, 100px) clamp(28px, 4vw, 64px) clamp(50px, 7vh, 80px)",
+          zIndex: 3,
+          overflowY: "auto",
+        }}
+      >
+        <AnimatePresence mode="wait">
+          {phase === "input" && (
+            <motion.div
+              key="input"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.7, ease: EASE }}
+              style={{
+                width: "100%",
+                maxWidth: "720px",
+                textAlign: "center",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <Eyebrow text="13 — AI Sales Pitch ★" />
+              <Headline>
+                Get your custom{" "}
+                <span
+                  style={{
+                    fontFamily: "var(--font-fraunces)",
+                    fontStyle: "italic",
+                    fontWeight: 500,
+                    color: "#C9A96E",
+                  }}
+                >
+                  proposal.
+                </span>
+              </Headline>
+              <GoldRule delay={0.18} />
+              <Body>
+                Type your brand. Receive a strategic, AI-generated proposal in
+                seconds — written specifically for you. Audience match,
+                projected revenue, recommended zone, and a personalized
+                editorial pitch.
+              </Body>
+
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: EASE, delay: 0.35 }}
+                style={{
+                  marginTop: "44px",
+                  display: "flex",
+                  gap: "12px",
+                  justifyContent: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                <input
+                  type="text"
+                  value={brand}
+                  onChange={(e) => setBrand(e.target.value)}
+                  onKeyDown={(e) => {
+                    e.stopPropagation();
+                    if (e.key === " ") e.preventDefault();
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      onGenerate();
+                    }
+                  }}
+                  placeholder="Gucci, Apple, Rolex, Nike…"
+                  autoFocus
+                  style={{
+                    flex: "1 1 280px",
+                    minWidth: "240px",
+                    maxWidth: "420px",
+                    padding: "16px 22px",
+                    background: "rgba(255,255,255,0.04)",
+                    backdropFilter: "blur(24px) saturate(160%)",
+                    WebkitBackdropFilter: "blur(24px) saturate(160%)",
+                    border: "1px solid rgba(201,169,110,0.22)",
+                    borderRadius: "9999px",
+                    color: "white",
+                    fontFamily: "var(--font-montserrat)",
+                    fontSize: "15px",
+                    fontWeight: 400,
+                    letterSpacing: "0.02em",
+                    outline: "none",
+                  }}
+                />
+                <motion.button
+                  onClick={onGenerate}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  style={{
+                    padding: "16px 32px",
+                    background:
+                      "linear-gradient(135deg, #C9A96E 0%, #B59458 100%)",
+                    border: "none",
+                    borderRadius: "9999px",
+                    color: "#0A0F1E",
+                    fontFamily: "var(--font-montserrat)",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    letterSpacing: "0.20em",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    boxShadow:
+                      "0 8px 30px rgba(201,169,110,0.30), inset 0 1px 0 rgba(255,255,255,0.20)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  <span style={{ fontSize: "13px" }}>✦</span>
+                  Generate Pitch →
+                </motion.button>
+              </motion.div>
+
+            </motion.div>
+          )}
+
+          {phase === "loading" && (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4 }}
+              style={{ textAlign: "center" }}
+            >
+              <motion.div
+                animate={{ opacity: [0.4, 1, 0.4], scale: [0.96, 1, 0.96] }}
+                transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+                style={{
+                  fontFamily: "var(--font-fraunces)",
+                  fontStyle: "italic",
+                  fontWeight: 400,
+                  fontSize: "clamp(22px, 3vw, 32px)",
+                  color: "#C9A96E",
+                  letterSpacing: "0.01em",
+                }}
+              >
+                Crafting your proposal…
+              </motion.div>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: "240px" }}
+                transition={{ duration: 1.6, ease: EASE }}
+                style={{
+                  height: "1px",
+                  background:
+                    "linear-gradient(to right, transparent, #C9A96E, transparent)",
+                  margin: "32px auto 0",
+                }}
+              />
+              <p
+                style={{
+                  marginTop: "20px",
+                  fontFamily: "var(--font-montserrat)",
+                  fontSize: "10px",
+                  letterSpacing: "0.22em",
+                  textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.45)",
+                }}
+              >
+                AI · Personalized for {brandTitleCase(submitted)}
+              </p>
+            </motion.div>
+          )}
+
+          {phase === "result" && pitchData && (
+            <PitchResult
+              brandName={brandTitleCase(submitted)}
+              pitch={pitchData}
+              onReset={onReset}
+            />
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+function BrandSlide({ openInquiry }: { openInquiry: (t?: InquiryType) => void }) {
+  const [brand, setBrand] = useState("");
+  const [phase, setPhase] = useState<"input" | "loading" | "result">("input");
+  const [logoOk, setLogoOk] = useState(true);
+  const [submitted, setSubmitted] = useState("");
+  const [generatedImage, setGeneratedImage] = useState<string>("");
+
+  const template = submitted ? brandTemplate(submitted) : "luxury-gold";
+  const domain = submitted ? brandDomain(submitted) : "";
+  const display = submitted ? brandTitleCase(submitted) : "";
+  const logoUrl = domain ? `https://logo.clearbit.com/${domain}` : "";
+
+  const onGenerate = useCallback(async () => {
+    const v = brand.trim();
+    if (!v) return;
+    setSubmitted(v);
+    setLogoOk(true);
+    setPhase("loading");
+    console.log(`[BrandSlide] Calling API for ${v}`);
+
+    try {
+      const res = await fetch("/api/generate-storefront", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brandName: v }),
+      });
+
+      const data = await res.json() as Record<string, any>;
+      console.log(`[BrandSlide] API response:`, data);
+
+      if (data.ok && data.imageUrl) {
+        console.log(`[BrandSlide] Setting generated image: ${data.imageUrl}`);
+        setGeneratedImage(data.imageUrl);
+        window.setTimeout(() => setPhase("result"), 1200);
+      } else {
+        console.warn(`[BrandSlide] API returned error: ${data.error}`);
+        window.setTimeout(() => setPhase("result"), 1200);
+      }
+    } catch (error) {
+      console.error(`[BrandSlide] API call failed:`, error);
+      window.setTimeout(() => setPhase("result"), 1200);
+    }
+  }, [brand]);
+
+  const onReset = useCallback(() => {
+    setPhase("input");
+    setBrand("");
+    setSubmitted("");
+    setLogoOk(true);
+    setGeneratedImage("");
+  }, []);
+
+  useEffect(() => {
+    console.log(`[BrandSlide] generatedImage state:`, generatedImage);
+  }, [generatedImage]);
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "100%",
+        overflow: "hidden",
+        background: "#0A0F1E",
+      }}
+    >
+      {/* Cinematic backdrop — fades to the storefront on result */}
+      <AnimatePresence mode="wait">
+        {phase !== "result" ? (
+          <motion.div
+            key="atmosphere"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.7, ease: EASE }}
+            style={{ position: "absolute", inset: 0 }}
+          >
+            <CinematicVideoBg src={LOOP_VIDEOS.luxury} />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="storefront"
+            initial={{ opacity: 0, scale: 1.04 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.1, ease: EASE }}
+            style={{ position: "absolute", inset: 0 }}
+          >
+            <img
+              src={generatedImage || STOREFRONTS[template]}
+              alt={`${display} flagship rendering`}
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+            />
+            {/* Soft gradients to keep text legible */}
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background:
+                  "linear-gradient(to bottom, rgba(10,15,30,0.55) 0%, rgba(10,15,30,0.05) 30%, rgba(10,15,30,0.10) 60%, rgba(10,15,30,0.85) 100%)",
+                pointerEvents: "none",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                boxShadow: "inset 0 0 200px 90px rgba(10,15,30,0.55)",
+                pointerEvents: "none",
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <SlideTopBar index={11} />
+
+      {/* ── Center stage ────────────────────────────────────────── */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "clamp(40px, 8vh, 80px) clamp(24px, 5vw, 80px)",
+          zIndex: 3,
+        }}
+      >
+        <AnimatePresence mode="wait">
+          {phase === "input" && (
+            <motion.div
+              key="input"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.7, ease: EASE }}
+              style={{
+                width: "100%",
+                maxWidth: "720px",
+                textAlign: "center",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <Eyebrow text="10 — See Your Brand Here" />
+              <Headline>
+                Imagine your brand{" "}
+                <span
+                  style={{
+                    fontFamily: "var(--font-fraunces)",
+                    fontStyle: "italic",
+                    fontWeight: 500,
+                    color: "#C9A96E",
+                  }}
+                >
+                  here.
+                </span>
+              </Headline>
+              <GoldRule delay={0.18} />
+              <Body>
+                Type a brand name. We&apos;ll render it inside American Dream
+                in seconds — flagship facade, real logo, your moment.
+              </Body>
+
+              <motion.div
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: EASE, delay: 0.35 }}
+                style={{
+                  marginTop: "44px",
+                  display: "flex",
+                  gap: "12px",
+                  justifyContent: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                <input
+                  type="text"
+                  value={brand}
+                  onChange={(e) => setBrand(e.target.value)}
+                  onKeyDown={(e) => {
+                    e.stopPropagation();
+                    if (e.key === " ") e.preventDefault();
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      onGenerate();
+                    }
+                  }}
+                  placeholder="Gucci, Apple, Rolex, Nike…"
+                  autoFocus
+                  style={{
+                    flex: "1 1 280px",
+                    minWidth: "240px",
+                    maxWidth: "420px",
+                    padding: "16px 22px",
+                    background: "rgba(255,255,255,0.04)",
+                    backdropFilter: "blur(24px) saturate(160%)",
+                    WebkitBackdropFilter: "blur(24px) saturate(160%)",
+                    border: "1px solid rgba(201,169,110,0.22)",
+                    borderRadius: "9999px",
+                    color: "white",
+                    fontFamily: "var(--font-montserrat)",
+                    fontSize: "15px",
+                    fontWeight: 400,
+                    letterSpacing: "0.02em",
+                    outline: "none",
+                    transition: "border-color 0.3s ease, background 0.3s ease",
+                  }}
+                  onFocus={(e) => {
+                    (e.target as HTMLInputElement).style.borderColor =
+                      "rgba(201,169,110,0.5)";
+                    (e.target as HTMLInputElement).style.background =
+                      "rgba(255,255,255,0.06)";
+                  }}
+                  onBlur={(e) => {
+                    (e.target as HTMLInputElement).style.borderColor =
+                      "rgba(201,169,110,0.22)";
+                    (e.target as HTMLInputElement).style.background =
+                      "rgba(255,255,255,0.04)";
+                  }}
+                />
+                <motion.button
+                  onClick={onGenerate}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  style={{
+                    padding: "16px 30px",
+                    background:
+                      "linear-gradient(135deg, #C9A96E 0%, #B59458 100%)",
+                    border: "none",
+                    borderRadius: "9999px",
+                    color: "#0A0F1E",
+                    fontFamily: "var(--font-montserrat)",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    letterSpacing: "0.20em",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    boxShadow:
+                      "0 8px 30px rgba(201,169,110,0.30), inset 0 1px 0 rgba(255,255,255,0.20)",
+                  }}
+                >
+                  Render It →
+                </motion.button>
+              </motion.div>
+
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, ease: EASE, delay: 0.6 }}
+                style={{
+                  marginTop: "24px",
+                  fontFamily: "var(--font-montserrat)",
+                  fontSize: "10px",
+                  letterSpacing: "0.20em",
+                  textTransform: "uppercase",
+                  color: "rgba(255,255,255,0.30)",
+                }}
+              >
+                Try a luxury house · sportswear · tech retail
+              </motion.p>
+            </motion.div>
+          )}
+
+          {phase === "loading" && (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4 }}
+              style={{ textAlign: "center" }}
+            >
+              <motion.div
+                animate={{ opacity: [0.4, 1, 0.4], scale: [0.96, 1, 0.96] }}
+                transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+                style={{
+                  fontFamily: "var(--font-fraunces)",
+                  fontStyle: "italic",
+                  fontWeight: 400,
+                  fontSize: "clamp(22px, 3vw, 32px)",
+                  color: "#C9A96E",
+                  letterSpacing: "0.01em",
+                }}
+              >
+                Placing {brandTitleCase(brand)} inside American Dream…
+              </motion.div>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: "240px" }}
+                transition={{ duration: 1.3, ease: EASE }}
+                style={{
+                  height: "1px",
+                  margin: "28px auto 0",
+                  background:
+                    "linear-gradient(90deg, transparent, rgba(201,169,110,0.7), transparent)",
+                }}
+              />
+            </motion.div>
+          )}
+
+          {phase === "result" && (
+            <motion.div
+              key="result"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.9, ease: EASE, delay: 0.4 }}
+              style={{
+                width: "100%",
+                maxWidth: "920px",
+                textAlign: "center",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, ease: EASE, delay: 0.8 }}
+                style={{
+                  textShadow: "0 8px 32px rgba(0,0,0,0.60), 0 2px 8px rgba(0,0,0,0.40)",
+                }}
+              >
+                <Eyebrow text="Your Flagship Experience" />
+                <Headline>
+                  <span
+                    style={{
+                      fontFamily: "var(--font-fraunces)",
+                      fontStyle: "italic",
+                      fontWeight: 500,
+                      color: "#C9A96E",
+                      textShadow: "0 12px 40px rgba(0,0,0,0.70), 0 4px 12px rgba(0,0,0,0.50)",
+                    }}
+                  >
+                    AI-rendered
+                  </span>{" "}
+                  at American Dream.
+                </Headline>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, ease: EASE, delay: 1.3 }}
+                style={{
+                  marginTop: "48px",
+                  display: "flex",
+                  gap: "16px",
+                  justifyContent: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                <motion.button
+                  onClick={() => openInquiry("leasing")}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.96 }}
+                  style={{
+                    padding: "15px 36px",
+                    background:
+                      "linear-gradient(135deg, #C9A96E 0%, #B59458 100%)",
+                    border: "none",
+                    borderRadius: "9999px",
+                    color: "#0A0F1E",
+                    fontFamily: "var(--font-montserrat)",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    boxShadow:
+                      "0 12px 40px rgba(201,169,110,0.40), inset 0 1px 0 rgba(255,255,255,0.25)",
+                    transition: "all 0.3s ease",
+                  }}
+                >
+                  Start the Conversation →
+                </motion.button>
+                <motion.button
+                  onClick={onReset}
+                  whileHover={{
+                    background: "rgba(255,255,255,0.09)",
+                    borderColor: "rgba(201,169,110,0.45)",
+                  }}
+                  whileTap={{ scale: 0.96 }}
+                  style={{
+                    padding: "15px 36px",
+                    background: "rgba(255,255,255,0.05)",
+                    backdropFilter: "blur(32px) saturate(180%)",
+                    WebkitBackdropFilter: "blur(32px) saturate(180%)",
+                    border: "1px solid rgba(201,169,110,0.18)",
+                    borderRadius: "9999px",
+                    color: "rgba(255,255,255,0.90)",
+                    fontFamily: "var(--font-montserrat)",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    cursor: "pointer",
+                    transition: "all 0.3s ease",
+                  }}
+                >
+                  Try another brand
+                </motion.button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+// ─── SLIDE 11 — CLOSING CTA ───────────────────────────────────────────────────
 
 function CtaSlide({ openInquiry }: { openInquiry: (t?: InquiryType) => void }) {
   return (
@@ -2881,10 +4857,10 @@ function CtaSlide({ openInquiry }: { openInquiry: (t?: InquiryType) => void }) {
         background: "#0A0F1E",
       }}
     >
-      <CinematicBg src={IMG.privateShop} />
+      <CinematicBg src={ASK_BG} />
       {/* Extra overlay for CTA */}
       <div style={{ position: "absolute", inset: 0, background: "rgba(10,15,30,0.35)", pointerEvents: "none" }} />
-      <SlideTopBar index={13} />
+      <SlideTopBar index={12} />
 
       {/* Subtle ambient orb */}
       <div
@@ -3305,6 +5281,7 @@ export default function DeckEngine() {
   const presentation = usePresentation();
   const wheelLock = useRef(false);
   const touchStart = useRef<number | null>(null);
+  const audio = useDeckAudio();
 
   // Sync with presentation mode
   useEffect(() => {
@@ -3312,6 +5289,37 @@ export default function DeckEngine() {
       setCurrent(presentation.state.slideIndex);
     }
   }, [presentation.state]);
+
+  // Menu jump nav — read ?slide=<slug> on mount + on history nav.
+  // Lets the MenuDrawer link directly to any section.
+  useEffect(() => {
+    const applyFromUrl = () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const slug = params.get("slide");
+        if (!slug) return;
+        const idx = SLIDE_SLUGS[slug];
+        if (typeof idx === "number") setCurrent(idx);
+      } catch {}
+    };
+    applyFromUrl();
+    const onPop = () => applyFromUrl();
+    window.addEventListener("popstate", onPop);
+    // Custom event fired by MenuDrawer for in-app jumps without router push
+    const onJump = (e: Event) => {
+      const detail = (e as CustomEvent<{ slide?: string; index?: number }>).detail;
+      if (!detail) return;
+      if (typeof detail.index === "number") setCurrent(detail.index);
+      else if (detail.slide && typeof SLIDE_SLUGS[detail.slide] === "number") {
+        setCurrent(SLIDE_SLUGS[detail.slide]);
+      }
+    };
+    window.addEventListener("deck:goto", onJump as EventListener);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      window.removeEventListener("deck:goto", onJump as EventListener);
+    };
+  }, []);
 
   // Lock body scroll
   useEffect(() => {
@@ -3392,10 +5400,11 @@ export default function DeckEngine() {
     };
   }, []);
 
+  // Round 2 — 13 slides. Removed: StoryDeck, Property "#1 destination".
+  // Added: BrandSlide (Imagine Your Brand Here ★).
   const slides = [
     <SplashSlide key="splash" onEnter={handleEnter} />,
-    <StoryDeckSlide key="story" />,
-    <PropertySlide key="property" />,
+    <HubSlide key="hub" />,
     <AudienceSlide key="audience" />,
     <LuxurySlide key="luxury" />,
     <ExperienceCollageSlide key="experience" />,
@@ -3406,6 +5415,8 @@ export default function DeckEngine() {
     <EventsSlide key="events" />,
     <LeasingSlide key="leasing" openInquiry={open} />,
     <VenuesSlide key="venues" />,
+    <BrandSlide key="brand" openInquiry={open} />,
+    <PitchSlide key="pitch" openInquiry={open} />,
     <CtaSlide key="cta" openInquiry={open} />,
   ];
 
@@ -3442,6 +5453,22 @@ export default function DeckEngine() {
           onNext={goNext}
         />
       )}
+
+      {/* Background music control — bottom-left. Hidden during presentation
+          so the Presenting pill (also bottom-left) owns that corner. */}
+      <MuteButton
+        muted={audio.muted}
+        onToggle={audio.toggleMute}
+        hidden={presentation.state.isPresenting}
+      />
+
+      {/* AI Voice Narrator — sits next to mute button, hidden on splash slide */}
+      <NarratorButton
+        current={current}
+        onStart={audio.duck}
+        onEnd={audio.restore}
+        hidden={presentation.state.isPresenting || current === 0}
+      />
     </div>
   );
 }

@@ -39,7 +39,7 @@ const NAV_ITEMS: NavItem[] = [
     accent: "Opening",
     href: "/",
     thumb: HOME_THUMB,
-    description: "The platform overture — video hero, key stats, and the narrative arc in fourteen slides.",
+    description: "The platform overture — cold-open cinema, six worlds, and the killer ‘Imagine Your Brand Here’ moment.",
   },
   {
     index: "02",
@@ -478,6 +478,113 @@ export default function MenuDrawer() {
                   background: "rgba(255,255,255,0.06)",
                 }}
               />
+
+              {/* ── Jump to section (Round 2 — non-linear navigation) ── */}
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: EASE, delay: 0.55 }}
+                style={{
+                  marginTop: "clamp(18px, 2.4vh, 28px)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div
+                    style={{
+                      width: "22px",
+                      height: "1px",
+                      background: "rgba(201,169,110,0.55)",
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontFamily: "var(--font-montserrat)",
+                      fontSize: "9.5px",
+                      fontWeight: 500,
+                      letterSpacing: "0.48em",
+                      textTransform: "uppercase",
+                      color: "rgba(255,255,255,0.40)",
+                    }}
+                  >
+                    Jump to Section
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "8px",
+                  }}
+                >
+                  {[
+                    { slug: "hub", label: "Hub" },
+                    { slug: "audience", label: "Audience" },
+                    { slug: "luxury", label: "Luxury" },
+                    { slug: "experience", label: "Experience" },
+                    { slug: "retail", label: "Retail" },
+                    { slug: "partners", label: "Partners" },
+                    { slug: "dining", label: "Dining" },
+                    { slug: "food", label: "Food" },
+                    { slug: "events", label: "Events" },
+                    { slug: "brand", label: "Your Brand", star: true },
+                    { slug: "pitch", label: "AI Pitch", star: true },
+                    { slug: "contact", label: "Contact" },
+                  ].map((s) => (
+                    <Link
+                      key={s.slug}
+                      href={`/?slide=${s.slug}`}
+                      onClick={(e) => {
+                        // If we're already on home, jump in-place via custom event (no flicker)
+                        if (pathname === "/") {
+                          e.preventDefault();
+                          window.dispatchEvent(
+                            new CustomEvent("deck:goto", { detail: { slide: s.slug } }),
+                          );
+                          // also update URL so deep-link/share works
+                          window.history.replaceState(null, "", `/?slide=${s.slug}`);
+                          close();
+                        }
+                      }}
+                      style={{ textDecoration: "none" }}
+                    >
+                      <motion.span
+                        whileHover={{
+                          background: "rgba(201,169,110,0.12)",
+                          borderColor: "rgba(201,169,110,0.45)",
+                          color: s.star ? "#C9A96E" : "rgba(255,255,255,0.95)",
+                        }}
+                        whileTap={{ scale: 0.96 }}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          padding: "8px 16px",
+                          borderRadius: "9999px",
+                          background: "rgba(255,255,255,0.04)",
+                          backdropFilter: "blur(20px) saturate(140%)",
+                          WebkitBackdropFilter: "blur(20px) saturate(140%)",
+                          border: `1px solid ${s.star ? "rgba(201,169,110,0.40)" : "rgba(255,255,255,0.10)"}`,
+                          color: s.star ? "#C9A96E" : "rgba(255,255,255,0.78)",
+                          fontFamily: "var(--font-montserrat)",
+                          fontSize: "10.5px",
+                          fontWeight: 600,
+                          letterSpacing: "0.14em",
+                          textTransform: "uppercase",
+                          transition: "all 0.3s ease",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {s.star && <span style={{ color: "#C9A96E" }}>✦</span>}
+                        {s.label}
+                      </motion.span>
+                    </Link>
+                  ))}
+                </div>
+              </motion.div>
 
               {/* ── Begin Presentation CTA ── */}
               <motion.button

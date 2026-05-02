@@ -1,7 +1,13 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from "react";
-import MenuDrawer from "@/components/deck/MenuDrawer";
+import dynamic from "next/dynamic";
+
+// Drawer only renders when the user opens the menu — defer the bundle.
+const MenuDrawer = dynamic(() => import("@/components/deck/MenuDrawer"), {
+  ssr: false,
+  loading: () => null,
+});
 
 type MenuContextValue = {
   isOpen: boolean;

@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Cormorant_Garamond, Bodoni_Moda, Playfair_Display, Fraunces, Raleway, Jura, Montserrat } from "next/font/google";
+import { Geist, Geist_Mono, Fraunces, Montserrat } from "next/font/google";
 import "./globals.css";
 import SmoothScrollProvider from "@/providers/SmoothScrollProvider";
 import InquiryProvider from "@/providers/InquiryProvider";
 import MenuProvider from "@/providers/MenuProvider";
 import PresentationProvider from "@/providers/PresentationProvider";
+import { DeckAudioProvider } from "@/providers/DeckAudioProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,64 +19,26 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
-const cormorant = Cormorant_Garamond({
-  variable: "--font-cormorant",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  display: "swap",
-});
-
-const bodoni = Bodoni_Moda({
-  variable: "--font-bodoni",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-  style: ["normal", "italic"],
-  display: "swap",
-});
-
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-  style: ["normal", "italic"],
-  display: "swap",
-});
-
 const fraunces = Fraunces({
   variable: "--font-fraunces",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
-  display: "swap",
-});
-
-const raleway = Raleway({
-  variable: "--font-raleway",
-  subsets: ["latin"],
-  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
-  style: ["normal", "italic"],
-  display: "swap",
-});
-
-const jura = Jura({
-  variable: "--font-jura",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
   display: "swap",
 });
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
   subsets: ["latin"],
-  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
-  style: ["normal", "italic"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
-// Hero poster — kept in sync with Hero.tsx. Rendered as a <link rel="preload">
+// Hero poster — frame 0 of the current cold open. Rendered as a <link rel="preload">
 // in the layout so the browser fetches it during HTML parsing (drops LCP).
+// Must stay in sync with HERO_POSTER inside DeckEngine.tsx.
 const HERO_POSTER =
-  "https://res.cloudinary.com/dwo1snivu/video/upload/so_0,f_auto,q_auto:good,w_1280/v1775988777/InShot_20260412_152744988_ocz9ev.jpg";
+  "https://res.cloudinary.com/dwo1snivu/video/upload/so_0,f_auto,q_auto:good,w_1920/v1777472942/InShot_20260428_122728870_qnvemd.jpg";
 
 // Social share image — same source as HERO_POSTER but cropped to the OG
 // standard 1200×630. Shown on Slack, LinkedIn, Twitter, iMessage previews, etc.
@@ -167,7 +130,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${cormorant.variable} ${bodoni.variable} ${playfair.variable} ${fraunces.variable} ${raleway.variable} ${jura.variable} ${montserrat.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} ${montserrat.variable} h-full antialiased`}
     >
       <head>
         {/* React 19 hoists this; ensures the hero LCP image starts downloading
@@ -183,7 +146,9 @@ export default function RootLayout({
         <SmoothScrollProvider>
           <InquiryProvider>
             <PresentationProvider>
-              <MenuProvider>{children}</MenuProvider>
+              <DeckAudioProvider>
+                <MenuProvider>{children}</MenuProvider>
+              </DeckAudioProvider>
             </PresentationProvider>
           </InquiryProvider>
         </SmoothScrollProvider>
