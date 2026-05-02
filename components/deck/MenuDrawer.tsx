@@ -288,7 +288,7 @@ export default function MenuDrawer() {
               display: "flex",
               alignItems: "center",
               padding:
-                "clamp(86px, 11vh, 140px) clamp(36px, 5vw, 72px) clamp(48px, 7vh, 96px)",
+                "clamp(76px, 9.5vh, 124px) clamp(36px, 5vw, 72px) clamp(40px, 6vh, 84px)",
               gap: "clamp(32px, 5vw, 80px)",
               zIndex: 5,
               overflowY: "auto",
@@ -314,7 +314,7 @@ export default function MenuDrawer() {
                   display: "flex",
                   alignItems: "center",
                   gap: "12px",
-                  marginBottom: "clamp(12px, 2vh, 28px)",
+                  marginBottom: "clamp(10px, 1.6vh, 22px)",
                 }}
               >
                 <div
@@ -352,7 +352,7 @@ export default function MenuDrawer() {
                       gridTemplateColumns: "44px 1fr",
                       gap: "clamp(14px, 2vw, 28px)",
                       alignItems: "center",
-                      padding: "clamp(8px, 1.1vh, 16px) 0",
+                      padding: "clamp(6px, 0.9vh, 13px) 0",
                       borderTop: "1px solid rgba(255,255,255,0.06)",
                       cursor: "pointer",
                       position: "relative",
@@ -487,7 +487,7 @@ export default function MenuDrawer() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, ease: EASE, delay: 0.55 }}
                 style={{
-                  marginTop: "clamp(18px, 2.4vh, 28px)",
+                  marginTop: "clamp(14px, 2vh, 24px)",
                   display: "flex",
                   flexDirection: "column",
                   gap: "12px",
